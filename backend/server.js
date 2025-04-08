@@ -23,6 +23,8 @@ app.post("/scrape-recipe", async (req, res) => {
 
     let recipeData = null;
     let ingredients = null;
+    let instructions = null;
+    let instructionTexts = null;
 
     for (let el of scripts) {
       try {
@@ -33,6 +35,11 @@ app.post("/scrape-recipe", async (req, res) => {
         if (found) {
           recipeData = found;
           ingredients = findIngredients(recipeData);
+          instructions = findInstructions(parsed)
+          if (instructions){
+            instructionTexts = instructions.map(step => step.text);
+            
+          }
           break;
         }
       } catch (e) {
@@ -52,6 +59,7 @@ app.post("/scrape-recipe", async (req, res) => {
       servings: recipeData.recipeYield || "N/A",
       category: recipeData.recipeCategory || [],
       cuisine: recipeData.recipeCuisine || [],
+      instructions: instructionTexts || "No instructions Found"
     });
   } catch (err) {
     console.error("💥 Scraping failed:", err.message);
@@ -115,6 +123,35 @@ function findIngredients(obj) {
   }
 
   return null;
+}
+
+function findInstructions (obj) {
+  console.log(obj)
+  const possibleKeys = [
+    "instructions",
+    "recipeinstructions",
+    "steps",
+    "directions"
+  
+  ];
+
+  if (typeof obj !== "object" || obj === null) return null;
+
+  for (const key of Object.keys(obj)) {
+    const lowerKey = key.toLowerCase();
+    if (possibleKeys.some(k => lowerKey.includes(k))) {
+      const value = obj[key];
+      if (Array.isArray(value)) {
+        return value;
+      }
+    }
+
+    const nested = findInstructions(obj[key]);
+    if (nested) return nested;
+  }
+
+  return null;
+
 }
 
 app.listen(port, () => {
