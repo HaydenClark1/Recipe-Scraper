@@ -104,6 +104,8 @@ const styles = StyleSheet.create({
         flexDirection:"column",
         justifyContent:"center",
         alignContent:"center",
+        position:"absolute",
+        bottom: 70,
         backgroundColor:"white",
         width:screenWidth*0.7,
         height: Math.max(40,screenHeight*0.045),

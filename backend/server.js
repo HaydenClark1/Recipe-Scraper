@@ -25,21 +25,31 @@ app.post("/scrape-recipe", async (req, res) => {
     let ingredients = null;
     let instructions = null;
     let instructionTexts = null;
+    let image = null;
 
     for (let el of scripts) {
       try {
         const raw = $(el).html();
         const parsed = JSON.parse(raw);
         const found = findRecipeLike(parsed);
-
         if (found) {
           recipeData = found;
           ingredients = findIngredients(recipeData);
-          instructions = findInstructions(parsed)
+          instructions = findInstructions(parsed,$)
+        
+
           if (instructions){
             instructionTexts = instructions.map(step => step.text);
-            
+            instructionTexts = splitInstructions(instructionTexts)
           }
+
+          if (Array.isArray(recipeData.image)) {
+            const last = recipeData.image[0];
+            image = typeof last === "string" ? last : last.url || null
+          } else if (typeof recipeData.image === "object" && recipeData.image.url) {
+            image = recipeData.image.url;
+          }
+          
           break;
         }
       } catch (e) {
@@ -59,13 +69,30 @@ app.post("/scrape-recipe", async (req, res) => {
       servings: recipeData.recipeYield || "N/A",
       category: recipeData.recipeCategory || [],
       cuisine: recipeData.recipeCuisine || [],
-      instructions: instructionTexts || "No instructions Found"
+      instructions: instructionTexts || "No instructions Found",
+      image: image || null
     });
   } catch (err) {
     console.error("💥 Scraping failed:", err.message);
     return res.status(500).json({ error: "Failed to scrape recipe" });
   }
 });
+
+function splitInstructions(instructions){
+  const splitFallback = [];
+
+  instructions.forEach(step => {
+    const parts = step.split(/(?=\d+\.\s)/g);
+    parts.forEach(p => {
+      const trimmed = p.trim();
+      if (trimmed.length > 0) {
+        splitFallback.push(trimmed);
+      }
+    });
+  });
+
+  return splitFallback;
+}
 
 function findRecipeLike(obj) {
   if (Array.isArray(obj)) {
@@ -125,8 +152,7 @@ function findIngredients(obj) {
   return null;
 }
 
-function findInstructions (obj) {
-  console.log(obj)
+function findInstructions (obj,$ = null) {
   const possibleKeys = [
     "instructions",
     "recipeinstructions",
@@ -148,6 +174,33 @@ function findInstructions (obj) {
 
     const nested = findInstructions(obj[key]);
     if (nested) return nested;
+  }
+
+  // DOM fallback using Cheerio
+  if ($) {
+    const fallback = [];
+
+    // Try common instruction selectors (from many recipe plugins)
+    const selectors = [
+      'li[class*="instruction"]',
+      '[class*="instruction"] li',
+      '[class*="direction"] li',
+      'ol li',
+      'ul li'
+    ];
+
+    for (const sel of selectors) {
+      $(sel).each((_, el) => {
+        const text = $(el).text().trim();
+        if (text && !fallback.includes(text)) {
+          fallback.push(text);
+        }
+      });
+
+      if (fallback.length > 0) break; // stop once something is found
+    }
+
+    if (fallback.length) return fallback;
   }
 
   return null;

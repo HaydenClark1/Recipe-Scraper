@@ -1,32 +1,29 @@
-import { BlurView } from "expo-blur";
-import { View, Text, StyleSheet,Dimensions,ScrollView, TouchableOpacity } from 'react-native';
-import { decode } from 'he';
+import { BlurView } from "expo-blur"
+import { View, Text,Image, StyleSheet,Dimensions,ScrollView, TouchableOpacity } from 'react-native';
 
 
-export default function InstructionsCard({instructions,title,onClose}){
-    return (
-         <View style={styles.container}>
-                    <BlurView intensity={80} tint="light" style={styles.glassCard}>
-                        <Text style={styles.title}>{title || "No Title Found"}</Text>
-                        
-                        <Text style={styles.sectionTitle}>Instructions</Text>
-        
-                        <ScrollView style={styles.scrollContainer}>
-                           {instructions ? instructions.map((instructions,index)=>(  
-                                                   <Text key={index} style={styles.bullet}>
-                                                       {"\u2022"} {decode(instructions)}
-                                                   </Text>
-                            )):(
-                                <Text style={{textAlign:"center",fontSize:25}}>No instructions Found</Text>
-                            )}
-                        </ScrollView>
-        
-                        <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                                <Text style={styles.btnText}>Close</Text>
-                        </TouchableOpacity>
-                    </BlurView>
-        </View>
-    )
+export default function ImageCard({recipeData,onClose }){
+const screenWidth = Dimensions.get('window').width;
+
+
+
+    return(   
+        <View style={styles.container}>
+            <BlurView intensity={80} tint="light" style={styles.glassCard}>
+                <Text style={styles.title}>{recipeData.title || "No Title Found"}</Text>
+                
+                <Image
+                source={{ uri: recipeData.image }}
+                style={{ width: screenWidth * 0.8, height: screenHeight * 0.5, borderRadius: 20 }}
+                resizeMode="cover"
+                />
+                    
+                <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                        <Text style={styles.btnText}>Close</Text>
+                </TouchableOpacity>
+            </BlurView>
+      </View>
+    );
 }
 
 const screenWidth = Dimensions.get('window').width;
@@ -108,7 +105,6 @@ const styles = StyleSheet.create({
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
         marginTop:20,
-        
     },
     btnText:{
         textAlign:"center",
