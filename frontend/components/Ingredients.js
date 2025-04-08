@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
       backgroundColor: '#a1c4fd',
     },
     scrollContainer: {
-        maxHeight: Math.max(300,screenHeight*0.6), 
+        maxHeight: Math.max(300,screenHeight*0.5), 
         width:Math.max(100,screenWidth*0.8),
 
         marginTop: 10,
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
         justifyContent:"center",
         alignContent:"center",
         position:"absolute",
-        bottom: 70,
+        bottom: 100,
         backgroundColor:"white",
         width:screenWidth*0.7,
         height: Math.max(40,screenHeight*0.045),

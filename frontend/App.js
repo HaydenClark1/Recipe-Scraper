@@ -1,5 +1,4 @@
-import { StatusBar } from 'expo-status-bar';
-import { Dimensions,Button, StyleSheet, Text,Image, TouchableOpacity, TextInput, View,ScrollView} from 'react-native';
+import { Dimensions, StyleSheet, Text, TouchableOpacity, TextInput, View,ScrollView} from 'react-native';
 import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ImageBackground } from 'react-native';
@@ -8,12 +7,17 @@ import Ingredients from './components/Ingredients';
 import InstructionsCard from './components/InstructionsCard';
 import Carousel from 'react-native-reanimated-carousel';
 import ImageCard from './components/ImageCard';
+import PaginationDots from './components/PaginationDots';
+import { useRef } from 'react';
 
 export default function App() {
   const backendURL = "http://192.168.4.49:7000/scrape-recipe"
   const [URL,setURL] = useState("")
   const [recipeData,setRecipeData] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [carouselKey, setCarouselKey] = useState(0);
+ 
 
   const scrapWebsite = async() =>{
     console.log("Captured URL:", URL);
@@ -41,6 +45,11 @@ export default function App() {
 
   }
 
+  const closeModal =() =>{
+    setModalVisible(false)
+    setCarouselKey(prev => prev + 1); 
+
+  }
 
 
   return (
@@ -69,53 +78,59 @@ export default function App() {
         {recipeData && (
 
             <Modal
-              animationType="slide"
-              transparent={false}
-              visible={modalVisible}
-              onRequestClose={() => setModalVisible(false)}
+            animationType="slide"
+            transparent={false}
+            visible={modalVisible}
+            onRequestClose={closeModal}
             >
-            <Carousel
-              loop={false}
-              width={screenWidth}
-              height={screenHeight}
-              autoPlay={false}
-              data={[
-                { id: 'image', type: 'image' },
-                { id: 'ingredients', type: 'ingredients' },
-                { id: 'instructions', type: 'instructions' },
-              ]}
-              scrollAnimationDuration={500}
-              renderItem={({ item }) => {
-                if (item.type === 'image') {
-                  return(
-                    <ImageCard 
-                    recipeData={recipeData}
-                    onClose={() => setModalVisible(false)}
-                    />
-                  )
-                } else if (item.type === 'ingredients') {
-                  return (
-                    <Ingredients
-                      recipeData={recipeData}
-                      onClose={() => setModalVisible(false)}
-                    />
-                  );
-                } else if (item.type === 'instructions') {
-                  return (
-                    <InstructionsCard
-                      instructions={recipeData.instructions}
-                      title={recipeData.title}
-                      onClose={() => setModalVisible(false)}
-                    />
-                  );
-                }
-                return null;
-              }}
-            />
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                        <Text style={styles.btnText}>Close</Text>
-              </TouchableOpacity>
-          </Modal>
+            <View style={styles.modalContainer}>
+              <Carousel
+                defaultIndex={0}
+                loop={false}
+                width={screenWidth}
+                height={screenHeight * 0.8}
+                autoPlay={false}
+                onSnapToItem={(index) => setCurrentIndex(index)}
+                data={[
+                  { id: 'image', type: 'image' },
+                  { id: 'ingredients', type: 'ingredients' },
+                  { id: 'instructions', type: 'instructions' },
+                ]}
+                scrollAnimationDuration={400}
+                renderItem={({ item }) => {
+                  if (item.type === 'image') {
+                    return (
+                      <ImageCard
+                        recipeData={recipeData}
+                        onClose={() => setModalVisible(false)}
+                      />
+                    );
+                  } else if (item.type === 'ingredients') {
+                    return (
+                      <Ingredients
+                        recipeData={recipeData}
+                        onClose={() => setModalVisible(false)}
+                      />
+                    );
+                  } else if (item.type === 'instructions') {
+                    return (
+                      <InstructionsCard
+                        instructions={recipeData.instructions}
+                        title={recipeData.title}
+                        onClose={() => setModalVisible(false)}
+                      />
+                    );
+                  }
+                  return null;
+                }}
+              />
+
+              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={3} />
+
+             
+            </View>
+            </Modal>
+
 
         )}
     </ImageBackground>
@@ -164,6 +179,13 @@ const styles = StyleSheet.create({
     textAlign:"center",
 
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    
+  },
+ 
   
 });
 
