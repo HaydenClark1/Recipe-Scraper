@@ -9,7 +9,7 @@ export default function SearchCard(){
     const [search,setSearch] = useState("")
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-    const backendURL = "http://192.168.4.49:7000/search-recipies"
+    const URL = "http://192.168.4.49:7000/search-recipies"
     const [currentPage, setCurrentPage] = useState(1);
     const recipesPerPage = 6;
     
@@ -18,7 +18,7 @@ export default function SearchCard(){
         console.log("loading")
         setLoading(true);
         try{
-            const response = await fetch(backendURL,{
+            const response = await fetch(URL,{
                 method:"POST",
                 headers: {
                     "Content-Type": "application/json"
