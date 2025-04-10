@@ -4,6 +4,10 @@ const axios = require("axios");
 const cors = require("cors");
 const XLSX = require('xlsx');
 const Fuse = require('fuse.js');
+const fs = require('fs');
+const csv = require('csv-parser');
+const { Parser } = require("json2csv");
+
 
 const app = express();
 const port = 7000;
@@ -13,10 +17,21 @@ app.use(express.json());
 
 
 // Read Recipies from Excel File and store
-const workbook = XLSX.readFile("FoodData.csv");
-const sheetName = workbook.SheetNames[0];
-const worksheet = workbook.Sheets[sheetName];
-const jsonData = XLSX.utils.sheet_to_json(worksheet);
+let jsonData = [];
+
+fs.createReadStream("FoodData.csv", { encoding: 'utf8' })
+  .pipe(csv())
+  .on("data", (row) => {
+    jsonData.push(row);
+  })
+  .on("end", () => {
+    
+app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+    console.log("✅ CSV loaded into memory using csv-parser");
+});
+
 
 
 
@@ -252,16 +267,9 @@ app.post('/save-recipe', async (req,res) => {
     return res.status(400).json({message: "Recipe already in database"})
   }
  
-  const lastRow = jsonData[jsonData.length - 1];
-  const lastIndex = lastRow && lastRow["Unnamed: 0"] != null
-  ? parseInt(lastRow["Unnamed: 0"]) || 0
-  : 0;
-  const newIndex = lastIndex + 1;
-
 
 
   const newRow = {
-    "Unnamed: 0": newIndex,
     Title: recipe.title,
     Cleaned_Ingredients: Array.isArray(recipe.ingredients)
       ? recipe.ingredients.join('\n')
@@ -272,27 +280,65 @@ app.post('/save-recipe', async (req,res) => {
     Image_Name: recipe.image
   }
   
-
-  // Append new row
-  
   jsonData.push(newRow);
 
-  // Convert back to worksheet
-  const updatedWorksheet = XLSX.utils.json_to_sheet(jsonData);
+  // Convert updated data to CSV
+  const fields = Object.keys(newRow); // or a static array of headers
+  const json2csvParser = new Parser({ fields });
+  const csv = json2csvParser.parse(jsonData);
 
-  //Replace the sheet in the workbook
-  workbook.Sheets[sheetName] = updatedWorksheet;
-
-
-  //Save back to csv 
-  XLSX.writeFile(workbook, "FoodData.csv", { bookType: "csv" });
-
+  // Write CSV back to file
+  fs.writeFileSync("FoodData.csv", csv, { encoding: 'utf8' });
   
 
   return res.status(200).json({message: 'Recipe saved'})
 
 })
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+app.post('/get-nutrition', async (req,res) => {
+  const {ingredients} = req.body
+  try {
+    const results = await Promise.all(
+      ingredients.map(async (ingredient) => {
+        return await fatSecretApi(ingredient);
+      })
+    );
+
+    res.status(200).json({ nutrition: results });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch nutrition info' });
+  }
 });
+
+const fatSecretApi = async (ingredient) => {
+  const secrets =  require('./api-keys.json');
+  const accessToken = secrets.access_token;
+
+  const response = await fetch("https://platform.fatsecret.com/rest/server.api",{
+    method: "POST",
+    headers: {
+      'Authorization' : `Bearer ${accessToken}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body : new URLSearchParams({
+      method: 'foods.search',
+      search_expression: ingredient,
+      format: 'json',
+    })
+  })
+  const data = await response.json()
+  
+  const foodLists = data?.foods.food;
+
+  if(Array.isArray(foodLists) && foodLists.length > 0){
+    const firstItem = foodLists[0];
+    console.log(firstItem)
+    return {
+      name: firstItem.food_name,
+      description: firstItem.food_description,
+      brand: firstItem.brand_name || "Generic"
+    }
+
+  }
+}
