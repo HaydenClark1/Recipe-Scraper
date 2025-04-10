@@ -2,12 +2,24 @@ const cheerio = require("cheerio");
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
+const XLSX = require('xlsx');
+const Fuse = require('fuse.js');
 
 const app = express();
 const port = 7000;
 
 app.use(cors());
 app.use(express.json());
+
+
+// Read Recipies from Excel File and store
+const workbook = XLSX.readFile("FoodData.csv");
+const sheetName = workbook.SheetNames[0];
+const worksheet = workbook.Sheets[sheetName];
+const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+
+
 
 app.post("/scrape-recipe", async (req, res) => {
   const { url } = req.body;
@@ -206,6 +218,30 @@ function findInstructions (obj,$ = null) {
   return null;
 
 }
+
+
+app.post("/search-recipies", async (req, res) => {
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  const {search} = req.body
+  if( !search || search.trim() === "" ){
+    return res.status(400).json({message: "Search term required"})
+  }
+  
+  const fuse = new Fuse(jsonData, {
+    keys:['Title'],
+    threshold:0.2,
+    includes:true,
+  });
+
+
+  const results = fuse.search(search)
+  const topResults = results.slice(0, 100);
+
+  // Map
+  const recipes = topResults.map(result => result.item);
+
+  res.status(200).json({ recipes });
+})
 
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
