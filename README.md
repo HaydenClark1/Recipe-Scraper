@@ -1,5 +1,5 @@
 # Recipe Scraper
-Tired of scrolling through endless stories, popups, and ads just to get to a recipe? So were we.
+Tired of scrolling through endless stories, popups, and ads just to get to a recipe? So was I.
 
 Recipe Scraper is a clean, minimalist web app that extracts the actual recipe and ingredients from cluttered cooking blogs and websites—no fluff, no distractions, just the ingredients and steps you need.
 
