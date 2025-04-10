@@ -3,10 +3,10 @@ import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ImageBackground } from 'react-native';
 import { useState } from 'react';
-import Ingredients from './Ingredients';
-import InstructionsCard from './InstructionsCard';
+import Ingredients from './Cards/Ingredients';
+import InstructionsCard from './Cards/InstructionsCard';
 import Carousel from 'react-native-reanimated-carousel';
-import ImageCard from './ImageCard';
+import ImageCard from './Cards/ImageCard';
 import PaginationDots from './PaginationDots'
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useCallback,useEffect } from 'react';
@@ -52,7 +52,6 @@ const backendURL = "http://192.168.4.49:7000"
 
 
   const scrapWebsite = async() =>{
-    console.log("Captured URL:", URL);
     try{
       const response = await fetch(`${backendURL}/scrape-recipe`,{
         method:"POST",

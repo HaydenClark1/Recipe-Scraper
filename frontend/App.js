@@ -1,7 +1,7 @@
 import Homescreen from "./components/Homescreen";
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import SearchCard from "./components/SearchCard";
+import SearchCard from "./components/Cards/SearchCard";
 
 export default function App() {
   const Stack = createNativeStackNavigator();
