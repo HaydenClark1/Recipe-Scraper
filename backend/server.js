@@ -246,11 +246,18 @@ app.post("/search-recipies", async (req, res) => {
 app.post('/save-recipe', async (req,res) => {
   const {recipe} = req.body
 
+  // Check if already in database
+  if (recipe.image.startsWith("https://raw.githubusercontent.com")){
+    console.log("Already in database")
+    return res.status(400).json({message: "Recipe already in database"})
+  }
+ 
   const lastRow = jsonData[jsonData.length - 1];
   const lastIndex = lastRow && lastRow["Unnamed: 0"] != null
   ? parseInt(lastRow["Unnamed: 0"]) || 0
   : 0;
   const newIndex = lastIndex + 1;
+
 
 
   const newRow = {

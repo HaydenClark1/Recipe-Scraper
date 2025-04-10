@@ -1,4 +1,4 @@
-import { Dimensions, Button,StyleSheet, Text, TouchableOpacity, TextInput, View,ScrollView} from 'react-native';
+import { Dimensions,Alert, Button,StyleSheet, Text, TouchableOpacity, TextInput, View,ScrollView} from 'react-native';
 import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ImageBackground } from 'react-native';
@@ -90,10 +90,20 @@ const backendURL = "http://192.168.4.49:7000"
           body: JSON.stringify({recipe: recipe})
 
       })
-      const data = await response.json();
-      setModalVisible((prev) => !prev)
+
+      if (!response.ok){
+
+        const errorData = await response.json();
+
+        Alert.alert("Opps!",errorData.message);
+
+        return
+      }else{
+        const data = await response.json();
+        setModalVisible((prev) => !prev)
+      }
     }catch (err){
-      console.log(err)
+      console.log("ERROR trying to save recipe")
     }
   }
 
