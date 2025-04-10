@@ -21,4 +21,4 @@ Just paste a link to a recipe blog, and let our scraper do the magic. It parses 
   - Docker deployment
 
 ## Important
-Currently this is still in progress, if you wish to test this application out, you will need to change server variable in Search.js and Homescreen.js to match your public ipv4 address.
+Currently this is still in progress, if you wish to test this application out, you will need to change server variable in Search.js and Homescreen.js to match your public ipv4 address. You will also need to change the server.js file and put in access token FatSecretApi
