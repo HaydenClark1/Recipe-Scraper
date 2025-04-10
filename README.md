@@ -21,4 +21,4 @@ Just paste a link to a recipe blog, and let our scraper do the magic. It parses 
   - Docker deployment
 
 ## Important
-Currently this is still in progress, if you wish to test this application out, you will need to change the backend server ip address to your own public ipv4 address.
+Currently this is still in progress, if you wish to test this application out, you will need to change server variable in Search.js and Homescreen.js to match your public ipv4 address.
