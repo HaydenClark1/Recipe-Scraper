@@ -9,11 +9,23 @@ export default function RecipeCards({recipe}){
         recipe.Image_Name = `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`
         return `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`;
     };
+    const handlePress = () => {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Home',
+              params: { selectedRecipe: recipe },
+            },
+          ],
+        });
+      };
+    
 
     
     return (
         <TouchableOpacity
-            onPress={() => navigation.navigate('Home',{selectedRecipe:recipe})}
+            onPress={handlePress}
         >
             <View style={styles.cardContainer}>
                 <View style={styles.headerContainer}>

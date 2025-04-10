@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Dimensions, StyleSheet, Text, TouchableOpacity, TextInput, View, ScrollView } from 'react-native';
 import RecipeCards from './RecipeCard';
 import { decode } from 'he';
+import { ActivityIndicator } from 'react-native';
 
 
 export default function SearchCard(){
@@ -58,8 +59,14 @@ export default function SearchCard(){
       <RecipeCards key={index} recipe={recipe} />
     ))}
   </View>
+    {loading && (
+        <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#888" />
+            <Text style={{ marginTop: 10 }}>Loading recipes...</Text>
+        </View>
+    )}
 
-  {results.length > 0 && (
+  {! loading && results.length > 0 && (
     <View style={styles.paginationContainer}>
       <TouchableOpacity
         onPress={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -82,6 +89,7 @@ export default function SearchCard(){
       </TouchableOpacity>
     </View>
   )}
+   
 </ScrollView>
 
 
@@ -114,7 +122,6 @@ const styles = StyleSheet.create({
     },
     pageButton: {
       padding: 10,
-      backgroundColor: "#eee",
       borderRadius: 5,
       marginHorizontal: 5,
     },
@@ -124,6 +131,11 @@ const styles = StyleSheet.create({
         justifyContent: "space-evenly",
         marginTop:20, 
 
+    },
+    loadingContainer: {
+        marginTop: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
   });
 
