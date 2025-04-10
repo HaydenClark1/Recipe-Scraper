@@ -16,7 +16,7 @@ import { useCallback,useEffect } from 'react';
 export default function Homescreen({navigation}){
 
 
-const backendURL = "http://192.168.4.49:7000/scrape-recipe"
+const backendURL = "http://192.168.4.49:7000"
   const [URL,setURL] = useState("")
   const [recipeData,setRecipeData] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,7 +32,7 @@ const backendURL = "http://192.168.4.49:7000/scrape-recipe"
         if (!recipeData || recipeData.title !== selectedRecipe.Title) {
           const newRecipe = {
             title: selectedRecipe.Title,
-            ingredients: selectedRecipe.Ingredients.replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(item => item.length > 0),
+            ingredients: selectedRecipe.Cleaned_Ingredients.replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(item => item.length > 0),
             instructions: selectedRecipe.Instructions.split(".").map(item => item.trim()).filter(item => item.length > 0),
             image: selectedRecipe.Image_Name,
           };
@@ -54,7 +54,7 @@ const backendURL = "http://192.168.4.49:7000/scrape-recipe"
   const scrapWebsite = async() =>{
     console.log("Captured URL:", URL);
     try{
-      const response = await fetch(backendURL,{
+      const response = await fetch(`${backendURL}/scrape-recipe`,{
         method:"POST",
         headers: {
           'Content-Type': 'application/json',
@@ -81,6 +81,20 @@ const backendURL = "http://192.168.4.49:7000/scrape-recipe"
     setModalVisible(false)
     setCarouselKey(prev => prev + 1); 
 
+  }
+  const saveRecipe = async (recipe) =>{
+    try{
+      const response = await fetch(`${backendURL}/save-recipe`, {
+          method:"POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({recipe: recipe})
+
+      })
+      const data = await response.json();
+      setModalVisible((prev) => !prev)
+    }catch (err){
+      console.log(err)
+    }
   }
 
 
@@ -145,6 +159,7 @@ const backendURL = "http://192.168.4.49:7000/scrape-recipe"
                       <ImageCard
                         recipeData={recipeData}
                         onClose={() => setModalVisible(false)}
+                        saveRecipe={saveRecipe}
                       />
                     );
                   } else if (item.type === 'ingredients') {
@@ -152,14 +167,15 @@ const backendURL = "http://192.168.4.49:7000/scrape-recipe"
                       <Ingredients
                         recipeData={recipeData}
                         onClose={() => setModalVisible(false)}
+                        saveRecipe={saveRecipe}
                       />
                     );
                   } else if (item.type === 'instructions') {
                     return (
                       <InstructionsCard
-                        instructions={recipeData.instructions}
-                        title={recipeData.title}
+                        recipeData={recipeData}
                         onClose={() => setModalVisible(false)}
+                        saveRecipe={saveRecipe}
                       />
                     );
                   }

@@ -2,7 +2,7 @@ import { BlurView } from "expo-blur"
 import { View, Text,Image, StyleSheet,Dimensions,ScrollView, TouchableOpacity } from 'react-native';
 
 
-export default function ImageCard({recipeData,onClose }){
+export default function ImageCard({recipeData,onClose,saveRecipe}){
 const screenWidth = Dimensions.get('window').width;
 
 
@@ -17,10 +17,15 @@ const screenWidth = Dimensions.get('window').width;
                 style={{ width: screenWidth * 0.8, height: screenHeight * 0.5, borderRadius: 20 }}
                 resizeMode="cover"
                 />
-                    
-                <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                        <Text style={styles.btnText}>Close</Text>
-                </TouchableOpacity>
+                
+                <View style={{width:screenWidth,flexDirection: "row",flexWrap:"wrap",position:"absolute",bottom:100, justifyContent:"space-around"}}>
+                    <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+                            <Text style={styles.btnText}>Close</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.saveBtn} onPress={() => saveRecipe(recipeData)}>
+                        <Text style={styles.btnText}>Save</Text>
+                    </TouchableOpacity>
+                </View>
             </BlurView>
       </View>
     );
@@ -94,20 +99,28 @@ const styles = StyleSheet.create({
         paddingTop:4,
     },
     closeBtn:{
-        display:"flex",
-        flexDirection:"column",
         justifyContent:"center",
         alignContent:"center",
-        position:"absolute",
-        bottom: 100,
-        backgroundColor:"white",
-        width:screenWidth*0.7,
+        backgroundColor:"#ff1f1f",
+        width:screenWidth*0.45,
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
         marginTop:30,
     },
+    saveBtn:{
+        justifyContent:"center",
+        alignContent:"center",
+        width:screenWidth*0.45,
+        height: Math.max(40,screenHeight*0.045),
+        borderRadius:10,
+        marginTop:30,
+        backgroundColor: "#139115",
+        
+
+    },
     btnText:{
         textAlign:"center",
+        color:"white"
 
     }
   });

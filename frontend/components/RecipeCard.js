@@ -6,8 +6,12 @@ export default function RecipeCards({recipe}){
 
 
     const getImageURL = (imageName) => {
-        recipe.Image_Name = `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`
-        return `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`;
+        if (imageName.startsWith("https")){ // If its from a new recipe
+          return imageName
+        }else{
+          recipe.Image_Name = `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`
+          return `https://raw.githubusercontent.com/HaydenClark1/recipe-images/main/${imageName}.jpg`;
+        }
     };
     const handlePress = () => {
         navigation.reset({

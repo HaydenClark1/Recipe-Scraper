@@ -243,6 +243,48 @@ app.post("/search-recipies", async (req, res) => {
   res.status(200).json({ recipes });
 })
 
+app.post('/save-recipe', async (req,res) => {
+  const {recipe} = req.body
+
+  const lastRow = jsonData[jsonData.length - 1];
+  const lastIndex = lastRow && lastRow["Unnamed: 0"] != null
+  ? parseInt(lastRow["Unnamed: 0"]) || 0
+  : 0;
+  const newIndex = lastIndex + 1;
+
+
+  const newRow = {
+    "Unnamed: 0": newIndex,
+    Title: recipe.title,
+    Cleaned_Ingredients: Array.isArray(recipe.ingredients)
+      ? recipe.ingredients.join('\n')
+      : recipe.ingredients,
+      Instructions: Array.isArray(recipe.instructions)
+      ? recipe.instructions.join('\n')
+      : recipe.instructions,
+    Image_Name: recipe.image
+  }
+
+  // Append new row
+  
+  jsonData.push(newRow);
+
+  // Convert back to worksheet
+  const updatedWorksheet = XLSX.utils.json_to_sheet(jsonData);
+
+  //Replace the sheet in the workbook
+  workbook.Sheets[sheetName] = updatedWorksheet;
+
+
+  //Save back to csv 
+  XLSX.writeFile(workbook, "FoodData.csv", { bookType: "csv" });
+
+  
+
+  return res.status(200).json({message: 'Recipe saved'})
+
+})
+
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
