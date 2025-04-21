@@ -10,7 +10,6 @@ const { Parser } = require("json2csv");
 
 
 const app = express();
-const port = 7000;
 
 app.use(cors());
 app.use(express.json());
@@ -25,12 +24,15 @@ fs.createReadStream("FoodData.csv", { encoding: 'utf8' })
     jsonData.push(row);
   })
   .on("end", () => {
-    
-app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
-  });
     console.log("✅ CSV loaded into memory using csv-parser");
+  });
+
+// ✅ Start server immediately
+const port = process.env.PORT || 7000;
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
+
 
 
 
@@ -342,3 +344,6 @@ const fatSecretApi = async (ingredient) => {
 
   }
 }
+app.get("/", (req, res) => {
+  res.send("✅ Backend is up!");
+});

@@ -15,7 +15,8 @@ import NutritionCard from './Cards/NutritionCard';
 export default function Homescreen({navigation}){
 
 
-  const backendURL = "http://192.168.4.49:7000"
+  //const backendURL = "http://192.168.4.49:7000"
+  const backendURL = "https://recipe-backend.onrender.com";
   const [URL,setURL] = useState("")
   const [recipeData,setRecipeData] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
@@ -74,12 +75,15 @@ export default function Homescreen({navigation}){
         body: JSON.stringify({url:URL}),
       });
       
-      const data = await response.json();
+      const text = await response.text();
+      console.log("Raw response:", text); // <--- Add this!
+
+      /*const data = await response.json();
       if (data){
         setRecipeData(data)
         setModalVisible(true)
         console.log(data)
-      }
+      }*/
      
 
 

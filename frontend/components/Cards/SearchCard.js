@@ -9,10 +9,11 @@ export default function SearchCard(){
     const [search,setSearch] = useState("")
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
-    const URL = "http://192.168.4.49:7000/search-recipies"
+    //const URL = "http://192.168.4.49:7000/search-recipies"
     const [currentPage, setCurrentPage] = useState(1);
     const recipesPerPage = 6;
-    
+    const URL = "https://recipe-backend.onrender.com/search-recipies";
+
 
     const fetchRecipies = async () => {
         console.log("loading")
