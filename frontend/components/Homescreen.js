@@ -2,21 +2,20 @@ import { Dimensions,Alert, Button,StyleSheet, Text, TouchableOpacity, TextInput,
 import { Modal } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ImageBackground } from 'react-native';
-import { useState } from 'react';
+import { useState,useEffect,useCallback } from 'react';
 import Ingredients from './Cards/Ingredients';
 import InstructionsCard from './Cards/InstructionsCard';
 import Carousel from 'react-native-reanimated-carousel';
 import ImageCard from './Cards/ImageCard';
 import PaginationDots from './PaginationDots'
 import { useRoute, useFocusEffect } from '@react-navigation/native';
-import { useCallback,useEffect } from 'react';
-
+import NutritionCard from './Cards/NutritionCard';
 
 
 export default function Homescreen({navigation}){
 
 
-const backendURL = "http://192.168.4.49:7000"
+  const backendURL = "http://192.168.4.49:7000"
   const [URL,setURL] = useState("")
   const [recipeData,setRecipeData] = useState(null)
   const [modalVisible, setModalVisible] = useState(false);
@@ -27,18 +26,32 @@ const backendURL = "http://192.168.4.49:7000"
   useFocusEffect(
     useCallback(() => {
       if (route.params?.selectedRecipe) {
+        
         const selectedRecipe = route.params.selectedRecipe;
-  
+        console.log("Raw Instructions:", selectedRecipe.Instructions);
         if (!recipeData || recipeData.title !== selectedRecipe.Title) {
           const newRecipe = {
             title: selectedRecipe.Title,
-            ingredients: selectedRecipe.Cleaned_Ingredients.replace(/^\[|\]$/g, '').split(',').map(item => item.trim()).filter(item => item.length > 0),
-            instructions: selectedRecipe.Instructions.split(".").map(item => item.trim()).filter(item => item.length > 0),
-            image: selectedRecipe.Image_Name,
+            ingredients: typeof selectedRecipe.Cleaned_Ingredients === 'string'
+              ? selectedRecipe.Cleaned_Ingredients.replace(/^\[|\]$/g, '')
+                  .split(',')
+                  .map(item => item?.trim())
+                  .filter(item => item && item.length > 0)
+              : [],
+              instructions: selectedRecipe.Instructions ?
+                  selectedRecipe.Instructions
+                    .split('.')
+                    .map(item => item?.trim())
+                    .filter(item => item && item.length > 0)
+                : [],
+            
+            image: selectedRecipe?.Image_Name || '',
           };
+          
           setRecipeData(newRecipe);
           setModalVisible(true); 
         }
+        
       }
     }, [route.params?.selectedRecipe])
   );
@@ -160,6 +173,7 @@ const backendURL = "http://192.168.4.49:7000"
                   { id: 'image', type: 'image' },
                   { id: 'ingredients', type: 'ingredients' },
                   { id: 'instructions', type: 'instructions' },
+                  { id: 'nutrition', type: 'nutrition'}
                 ]}
                 scrollAnimationDuration={400}
                 renderItem={({ item }) => {
@@ -187,12 +201,21 @@ const backendURL = "http://192.168.4.49:7000"
                         saveRecipe={saveRecipe}
                       />
                     );
+                  } 
+                  else if (item.type === 'nutrition') {
+                    return (
+                      <NutritionCard
+                        recipeData={recipeData}
+                        onClose={() => setModalVisible(false)}
+                        saveRecipe={saveRecipe}
+                      />
+                    );
                   }
                   return null;
                 }}
               />
 
-              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={3} />
+              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={4} />
 
              
             </View>

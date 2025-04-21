@@ -12,13 +12,18 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                         <Text style={styles.sectionTitle}>Instructions</Text>
         
                         <ScrollView style={styles.scrollContainer}>
-                           {recipeData.instructions ? recipeData.instructions.map((instructions,index)=>(  
-                                                   <Text key={index} style={styles.bullet}>
-                                                       {"\u2022"} {decode(instructions)}
-                                                   </Text>
-                            )):(
-                                <Text style={{textAlign:"center",fontSize:25}}>No instructions Found</Text>
+                        {recipeData.instructions && recipeData.instructions.length > 0 ? (
+                            recipeData.instructions.map((instruction, index) =>
+                                typeof instruction === 'string' && instruction.trim().length > 0 ? (
+                                <Text key={index} style={styles.bullet}>
+                                    {"\u2022"} {decode(instruction)}
+                                </Text>
+                                ) : null
+                            )
+                            ) : (
+                            <Text style={{ textAlign: "center", fontSize: 25 }}>No instructions Found</Text>
                             )}
+
                         </ScrollView>
         
                         <View style={{width:screenWidth,flexDirection: "row",flexWrap:"wrap",position:"absolute",bottom:100, justifyContent:"space-around"}}>
