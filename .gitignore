@@ -35,7 +35,3 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-
-eas.json
-
-api-keys.json

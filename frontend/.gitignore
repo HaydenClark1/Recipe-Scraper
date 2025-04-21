@@ -1,0 +1,46 @@
+# dependencies
+node_modules/
+
+# Expo files
+.expo/
+.expo-shared/
+dist/
+web-build/
+
+# Build output
+android/
+ios/
+build/
+*.apk
+*.aab
+
+# Local env & credentials
+.env
+.env.*.local
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+credentials/
+
+# Metro cache
+.metro-cache/
+metro-cache/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# macOS
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo
+
+# IDEs / editors
+.vscode/
+.idea/
+*.swp
