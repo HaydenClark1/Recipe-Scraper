@@ -20,7 +20,8 @@
       }
     },
     "android": {
-      "package": "com.haydenclark1.recipescrapperapp"
+      "package": "com.haydenclark1.recipescrapperapp",
+      "versionCode":1
     },
     "web": {
       "favicon": "./assets/favicon.png"
