@@ -12,18 +12,24 @@ const screenWidth = Dimensions.get('window').width;
             <BlurView intensity={80} tint="light" style={styles.glassCard}>
                 <Text style={styles.title}>{recipeData.title || "No Title Found"}</Text>
                 
-                <Image
-                source={{ uri: recipeData.image }}
-                style={{ width: screenWidth * 0.8, height: screenHeight * 0.5, borderRadius: 20 }}
-                resizeMode="cover"
-                />
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: recipeData.image }}
+                        style={styles.image}
+                        resizeMode="cover"
+                    />
+                </View>
+
                 
-                <View style={{width:screenWidth,flexDirection: "row",flexWrap:"wrap",position:"absolute",bottom:100, justifyContent:"space-around"}}>
+                <View style={styles.buttonContainer}>
                     <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                            <Text style={styles.btnText}>Close</Text>
+                        <Text style={styles.btnText}>Close</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.saveBtn} onPress={() => saveRecipe(recipeData)}>
-                        <Text style={styles.btnText}>Save</Text>
+                    <TouchableOpacity
+                        style={styles.saveBtn}
+                        onPress={() => saveRecipe(recipeData)}
+                    >
+                    <Text style={styles.btnText}>Save</Text>
                     </TouchableOpacity>
                 </View>
             </BlurView>
@@ -43,24 +49,7 @@ const styles = StyleSheet.create({
       alignItems: 'center',
       backgroundColor: '#a1c4fd',
     },
-    scrollContainer: {
-        maxHeight: Math.max(300,screenHeight*0.6), 
-        width:Math.max(100,screenWidth*0.8),
-
-        marginTop: 10,
-        backgroundColor: 'rgba(255, 255, 255, 0.25)', // soft fade
-        borderRadius: 15,
-        padding: 15,
-
-        // 🌫 Shadow for iOS
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 5 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-
-        // 🌀 Elevation for Android
-        elevation: 8,
-    },
+    
     glassCard: {
         width: screenWidth,
         height: screenHeight,
@@ -70,12 +59,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderColor: 'rgba(255, 255, 255, 0.3)',
         borderWidth: 1,
-              justifyContent: 'center', 
+        justifyContent: 'center', 
         alignItems: 'center',         
       },
       
     title: {
-    
         fontSize: 22,
         fontWeight: 'bold',
         color: '#000',
@@ -106,10 +94,10 @@ const styles = StyleSheet.create({
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
         marginTop:30,
+        marginRight:10,
     },
     saveBtn:{
         justifyContent:"center",
-        alignContent:"center",
         width:screenWidth*0.45,
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
@@ -122,7 +110,27 @@ const styles = StyleSheet.create({
         textAlign:"center",
         color:"white"
 
-    }
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        paddingTop: 20,
+
+      },
+    imageContainer:{
+      maxHeight: Math.max(300, screenHeight * 0.5),
+      width: Math.max(100, screenWidth * 0.8),
+      marginTop: 10,
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      borderRadius: 15,
+      padding: 5,
+    },
+    image: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 10,
+    },
+      
   });
 
 

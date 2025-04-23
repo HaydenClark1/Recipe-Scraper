@@ -26,12 +26,15 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
 
                         </ScrollView>
         
-                        <View style={{width:screenWidth,flexDirection: "row",flexWrap:"wrap",position:"absolute",bottom:100, justifyContent:"space-around"}}>
+                        <View style={styles.buttonContainer}>
                             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-                                    <Text style={styles.btnText}>Close</Text>
+                                <Text style={styles.btnText}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.saveBtn} onPress={() => saveRecipe(recipeData)}>
-                                <Text style={styles.btnText}>Save</Text>
+                            <TouchableOpacity
+                                style={styles.saveBtn}
+                                onPress={() => saveRecipe(recipeData)}
+                            >
+                            <Text style={styles.btnText}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </BlurView>
@@ -78,7 +81,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderColor: 'rgba(255, 255, 255, 0.3)',
         borderWidth: 1,
-              justifyContent: 'center', 
+        justifyContent: 'center', 
         alignItems: 'center',         
       },
       
@@ -114,10 +117,10 @@ const styles = StyleSheet.create({
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
         marginTop:30,
+        marginRight:10,
     },
     saveBtn:{
         justifyContent:"center",
-        alignContent:"center",
         width:screenWidth*0.45,
         height: Math.max(40,screenHeight*0.045),
         borderRadius:10,
@@ -130,7 +133,13 @@ const styles = StyleSheet.create({
         textAlign:"center",
         color:"white"
 
-    }
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-around",
+        marginTop: 20,
+      },
+      
   });
 
 

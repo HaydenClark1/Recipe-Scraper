@@ -10,6 +10,7 @@ import ImageCard from './Cards/ImageCard';
 import PaginationDots from './PaginationDots'
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import NutritionCard from './Cards/NutritionCard';
+import { ActivityIndicator } from 'react-native';
 
 
 export default function Homescreen({navigation}){
@@ -23,6 +24,8 @@ export default function Homescreen({navigation}){
   const [currentIndex, setCurrentIndex] = useState(0);
   const [carouselKey, setCarouselKey] = useState(0);
   const route = useRoute();
+  const [loading, setLoading] = useState(false);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -67,6 +70,7 @@ export default function Homescreen({navigation}){
 
   const scrapWebsite = async() =>{
     try{
+      setLoading(true);
       const response = await fetch(`${backendURL}/scrape-recipe`,{
         method:"POST",
         headers: {
@@ -86,6 +90,8 @@ export default function Homescreen({navigation}){
 
     }catch(error){
       console.log("error fetching data",error)
+    }finally{
+      setLoading(false);
     }
 
   }
@@ -174,7 +180,7 @@ export default function Homescreen({navigation}){
                   { id: 'image', type: 'image' },
                   { id: 'ingredients', type: 'ingredients' },
                   { id: 'instructions', type: 'instructions' },
-                  { id: 'nutrition', type: 'nutrition'}
+                  //{ id: 'nutrition', type: 'nutrition'}
                 ]}
                 scrollAnimationDuration={400}
                 renderItem={({ item }) => {
@@ -203,7 +209,7 @@ export default function Homescreen({navigation}){
                       />
                     );
                   } 
-                  else if (item.type === 'nutrition') {
+                  /*else if (item.type === 'nutrition') {
                     return (
                       <NutritionCard
                         recipeData={recipeData}
@@ -211,12 +217,12 @@ export default function Homescreen({navigation}){
                         saveRecipe={saveRecipe}
                       />
                     );
-                  }
+                  }*/
                   return null;
                 }}
               />
 
-              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={4} />
+              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={3} />
 
              
             </View>
@@ -224,6 +230,23 @@ export default function Homescreen({navigation}){
 
 
         )}
+
+
+        {loading && (
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={loading}
+          >
+            <BlurView intensity={80} tint="light" style={styles.loadingOverlay}>
+              <View style={styles.loadingBox}>
+                <ActivityIndicator size="large" color="#0000ff" />
+                <Text style={styles.loadingText}>Scraping recipe...</Text>
+              </View>
+            </BlurView>
+          </Modal>
+        )}
+
 
       
     </ImageBackground>
@@ -280,9 +303,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     
   },
-  searchBtn: {
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
 
-  }
+  loadingBox: {
+    padding: 20,
+    borderRadius: 10,
+    backgroundColor: 'white',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 18,
+    color: '#333',
+  },
+  
  
   
 });

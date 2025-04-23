@@ -77,6 +77,13 @@ app.post("/scrape-recipe", async (req, res) => {
             image = typeof last === "string" ? last : last.url || null
           } else if (typeof recipeData.image === "object" && recipeData.image.url) {
             image = recipeData.image.url;
+          }else{
+            // Fallback for image if JSON-LD doesn't contain one
+            if (!image && $) {
+              const ogImage = $('meta[property="og:image"]').attr('content');
+              if (ogImage) image = ogImage;
+            }
+
           }
           
           break;
@@ -209,24 +216,34 @@ function findInstructions (obj,$ = null) {
   if ($) {
     const fallback = [];
 
-    // Try common instruction selectors (from many recipe plugins)
-    const selectors = [
-      'li[class*="instruction"]',
-      '[class*="instruction"] li',
-      '[class*="direction"] li',
-      'ol li',
-      'ul li'
-    ];
+    // Specific to WordPress Recipe Maker
+    $('.wprm-recipe-instruction-text').each((_, el) => {
+      const text = $(el).text().trim();
+      if (text && !fallback.includes(text)) {
+        fallback.push(text);
+      }
+    });
 
-    for (const sel of selectors) {
-      $(sel).each((_, el) => {
-        const text = $(el).text().trim();
-        if (text && !fallback.includes(text)) {
-          fallback.push(text);
-        }
-      });
+    // Generic selectors if specific ones fail
+    if (fallback.length === 0) {
+      const selectors = [
+        'li[class*="instruction"]',
+        '[class*="instruction"] li',
+        '[class*="direction"] li',
+        'ol li',
+        'ul li'
+      ];
 
-      if (fallback.length > 0) break; // stop once something is found
+      for (const sel of selectors) {
+        $(sel).each((_, el) => {
+          const text = $(el).text().trim();
+          if (text && !fallback.includes(text)) {
+            fallback.push(text);
+          }
+        });
+
+        if (fallback.length > 0) break;
+      }
     }
 
     if (fallback.length) return fallback;
