@@ -6,7 +6,6 @@ const Fuse = require('fuse.js');
 const fs = require('fs');
 const csv = require('csv-parser');
 const { Parser } = require("json2csv");
-const axios = require('axios');
 const {Readable} = require("stream");
 
 const app = express();
