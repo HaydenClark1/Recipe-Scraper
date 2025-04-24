@@ -11,6 +11,7 @@ const screenWidth = Dimensions.get('window').width;
         <View style={styles.container}>
             <BlurView intensity={80} tint="light" style={styles.glassCard}>
                 <Text style={styles.title}>{recipeData.title || "No Title Found"}</Text>
+                <Text style={{marginBlock:7}}></Text>
                 
                 <View style={styles.imageContainer}>
                     <Image
@@ -43,9 +44,11 @@ const screenHeight= Dimensions.get('window').height;
 const styles = StyleSheet.create({
     container: {
       flex: 1,
+      display:"flex",
+      flexDirection:"column",
       width:screenWidth,
       height:screenHeight,
-      justifyContent: 'center',
+      justifyContent:"center",
       alignItems: 'center',
       backgroundColor: '#a1c4fd',
     },

@@ -14,8 +14,11 @@ const screenWidth = Dimensions.get('window').width;
                 <Text style={styles.title}>{recipeData.title || "No Title Found"}</Text>
 
                 <Text style={styles.sectionTitle}>Ingredients</Text>
-                <ScrollView style={styles.scrollContainer}>
-                    {recipeData.ingredients ? recipeData.ingredients.map((ingredient,index)=>(  
+                <ScrollView
+                        style={styles.scrollContainer}
+                        contentContainerStyle={{ paddingBottom: 40 }}
+                        >                    
+                        {recipeData.ingredients ? recipeData.ingredients.map((ingredient,index)=>(  
                         <Text key={index} style={styles.bullet}>
                             {"\u2022"} {ingredient}
                         </Text>
@@ -62,14 +65,15 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         padding: 15,
 
-        // 🌫 Shadow for iOS
+        //Shadow for iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 5 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
 
-        // 🌀 Elevation for Android
+        // Elevation for Android
         elevation: 8,
+        
     },
     glassCard: {
         width: screenWidth,

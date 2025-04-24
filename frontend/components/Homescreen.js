@@ -83,7 +83,6 @@ export default function Homescreen({navigation}){
       if (data){
         setRecipeData(data)
         setModalVisible(true)
-        console.log(data)
       }
      
 

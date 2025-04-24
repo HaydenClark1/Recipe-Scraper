@@ -2,9 +2,39 @@ import { BlurView } from "expo-blur";
 import { View, Text, StyleSheet,Dimensions, TouchableOpacity } from 'react-native';
 import { decode } from 'he';
 import { ScrollView } from 'react-native-gesture-handler';
+import Ingredients from "./Ingredients";
 
 
 export default function InstructionsCard({recipeData,onClose,saveRecipe}){
+    const backendURL = "https://recipe-scraper-hk6l.onrender.com";
+
+    const parseIngredients = async() =>{
+        try{
+          setLoading(true);
+          const response = await fetch(`${backendURL}/parse-ingredients-api`,{
+            method:"POST",
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ingredients:recipeData.ingredients}),
+          });
+          
+          const data = await response.json();
+          if (data){
+            console.log(data)
+          }
+         
+    
+    
+        }catch(error){
+          console.log("error fetching data",error)
+        }finally{
+          setLoading(false);
+        }
+    
+      }
+      
+
     return (
          <View style={styles.container}>
                     <BlurView intensity={80} tint="light" style={styles.glassCard}>
@@ -12,13 +42,16 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                         
                         <Text style={styles.sectionTitle}>Instructions</Text>
         
-                        <ScrollView style={styles.scrollContainer}>
+                        <ScrollView
+                            style={styles.scrollContainer}
+                            contentContainerStyle={{ paddingBottom: 40 }}
+                        >   
                         {recipeData.instructions && recipeData.instructions.length > 0 ? (
                             recipeData.instructions.map((instruction, index) =>
                                 typeof instruction === 'string' && instruction.trim().length > 0 ? (
-                                <Text key={index} style={styles.bullet}>
+                                    <Text key={index} style={styles.bullet}>
                                     {"\u2022"} {decode(instruction)}
-                                </Text>
+                                  </Text>                                  
                                 ) : null
                             )
                             ) : (
@@ -64,13 +97,13 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         padding: 15,
 
-        // 🌫 Shadow for iOS
+        // Shadow for iOS
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 5 },
         shadowOpacity: 0.2,
         shadowRadius: 10,
 
-        // 🌀 Elevation for Android
+        // Elevation for Android
         elevation: 8,
     },
     glassCard: {
