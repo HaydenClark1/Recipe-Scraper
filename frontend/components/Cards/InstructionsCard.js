@@ -1,6 +1,7 @@
 import { BlurView } from "expo-blur";
-import { View, Text, StyleSheet,Dimensions,ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet,Dimensions, TouchableOpacity } from 'react-native';
 import { decode } from 'he';
+import { ScrollView } from 'react-native-gesture-handler';
 
 
 export default function InstructionsCard({recipeData,onClose,saveRecipe}){

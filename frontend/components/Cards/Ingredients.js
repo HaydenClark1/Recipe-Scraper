@@ -1,5 +1,6 @@
 import { BlurView } from "expo-blur"
-import { View, Text, StyleSheet,Dimensions,ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet,Dimensions, TouchableOpacity } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
 
 
 export default function Ingredients({recipeData,onClose,saveRecipe }){

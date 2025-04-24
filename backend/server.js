@@ -2,12 +2,12 @@ const cheerio = require("cheerio");
 const express = require("express");
 const axios = require("axios");
 const cors = require("cors");
-const XLSX = require('xlsx');
 const Fuse = require('fuse.js');
 const fs = require('fs');
 const csv = require('csv-parser');
 const { Parser } = require("json2csv");
-
+const axios = require('axios');
+const {Readable} = require("stream");
 
 const app = express();
 
@@ -18,22 +18,42 @@ app.use(express.json());
 // Read Recipies from Excel File and store
 let jsonData = [];
 
-fs.createReadStream("FoodData.csv", { encoding: 'utf8' })
-  .pipe(csv())
-  .on("data", (row) => {
-    jsonData.push(row);
-  })
-  .on("end", () => {
-    console.log("✅ CSV loaded into memory using csv-parser");
-  });
 
 // ✅ Start server immediately
-const port = process.env.PORT || 7000;
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
-});
+(async () => {
+  jsonData = await loadCSVFromGitHub();
+
+  const port = process.env.PORT || 7000;
+  app.listen(port, () => {
+    console.log(`Server running at http://localhost:${port}`);
+  });
+})();
 
 
+
+async function loadCSVFromGitHub() {
+  const csvUrl = 'https://github.com/HaydenClark1/Recipe-Scraper.git/backend/FoodData.csv';
+
+  try {
+    const response = await axios.get(csvUrl);
+    const stream = Readable.from(response.data);
+    
+    return new Promise((resolve, reject) => {
+      const results = [];
+      stream
+        .pipe(csvParser())
+        .on('data', (row) => results.push(row))
+        .on('end', () => {
+          console.log(`✅ CSV loaded with ${results.length} rows`);
+          resolve(results);
+        })
+        .on('error', reject);
+    });
+  } catch (err) {
+    console.error("❌ Failed to load CSV from GitHub:", err.message);
+    return [];
+  }
+}
 
 
 
