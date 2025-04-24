@@ -4,7 +4,7 @@ const axios = require("axios");
 const cors = require("cors");
 const Fuse = require('fuse.js');
 const fs = require('fs');
-const csv = require('csv-parser');
+const csvParser = require('csv-parser');
 const { Parser } = require("json2csv");
 const {Readable} = require("stream");
 
@@ -31,7 +31,7 @@ let jsonData = [];
 
 
 async function loadCSVFromGitHub() {
-  const csvUrl = 'https://github.com/HaydenClark1/Recipe-Scraper.git/backend/FoodData.csv';
+  const csvUrl = 'https://raw.githubusercontent.com/HaydenClark1/Recipe-Scraper/main/backend/FoodData.csv';
 
   try {
     const response = await axios.get(csvUrl);
