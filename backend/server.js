@@ -21,7 +21,7 @@ let jsonData = [];
 // ✅ Start server immediately
 (async () => {
   jsonData = await loadCSVFromGitHub();
-
+  console.log(jsonData);
   const port = process.env.PORT || 7000;
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
@@ -276,6 +276,7 @@ function findInstructions (obj,$ = null) {
 app.post("/search-recipies", async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   const {search} = req.body
+  console.log(search)
   if( !search || search.trim() === "" ){
     return res.status(400).json({message: "Search term required"})
   }
