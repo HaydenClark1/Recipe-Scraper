@@ -278,6 +278,8 @@ app.post("/parse-ingredients-api", async (req,res) => {
       return res.status(500).json({ error: "API key missing from environment" });
     }
 
+    console.log("API KEY: " , apiKey);
+
     const { ingredients } = req.body;
 
     try {
