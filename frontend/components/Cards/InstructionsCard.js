@@ -2,9 +2,8 @@ import { BlurView } from "expo-blur";
 import { View, Text, StyleSheet,Dimensions, TouchableOpacity } from 'react-native';
 import { decode } from 'he';
 import { ScrollView } from 'react-native-gesture-handler';
-import Ingredients from "./Ingredients";
 import { ActivityIndicator } from 'react-native';
-import { useState,useEffect } from "react";
+import { useState,useEffect  } from "react";
 import { Modal } from "react-native";
 
 
@@ -14,7 +13,20 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
     const [loading, setLoading] = useState(false);
     const [ingredients, setIngredients] = useState([]);
     const [keywords, setKeywords] = useState([]);
+    const [ingredientModal, setIngredientModal] = useState(false);
+    const [activeIngredient,setActiveIngredient] = useState("")
 
+    useEffect(() =>{
+        const fetchIngredientsIfNeeded  = async() =>{
+            if (ingredients.length === 0) {
+                await parseIngredients();
+            } else {
+                console.log("Ingredients already cached.");
+            }
+        }
+        fetchIngredientsIfNeeded();
+
+    },[])
 
     const parseIngredients = async() =>{
         console.log("current ingredients ", ingredients);
@@ -61,7 +73,7 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
     
 
 
-    const highlightMatches = (text, keywords) => {
+    const highlightMatches = (text, keywords,onWordPress) => {
         let parts = [text];
       
         keywords.forEach((word) => {
@@ -83,7 +95,13 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
           typeof part === 'string' ? (
             <Text key={index}>{part}</Text>
           ) : (
-            <Text key={index} style={{ backgroundColor: 'yellow' }}>{part.text}</Text>
+            <Text
+            key={index}
+            onPress={() => onWordPress(part.text)}
+            style={[styles.bulletText, styles.highlight]}
+          >
+            {part.text}
+          </Text>
           )
         );
       };
@@ -104,7 +122,11 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             recipeData.instructions.map((instruction, index) =>
                                 typeof instruction === 'string' && instruction.trim().length > 0 ? (
                                     <Text key={index} style={styles.bullet}>
-                                        {"\u2022"} {highlightMatches(decode(instruction), keywords)}
+                                        {"\u2022"} {highlightMatches(decode(instruction), keywords, (word) => {
+                                            setActiveIngredient(word);
+                                            setIngredientModal(true);
+                                            
+                                        })}
                                     </Text>
                                 
                                 ) : null
@@ -114,13 +136,9 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             )}
 
                         </ScrollView>
-                        <TouchableOpacity style={styles.saveBtn} onPress={parseIngredients}>
-                            <Text style={styles.btnText}>
-                                Parse Ingredients
-                            </Text>
-                            </TouchableOpacity>
+                      
+                        
 
-        
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
                                 <Text style={styles.btnText}>Close</Text>
@@ -133,21 +151,21 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             </TouchableOpacity>
                         </View>
   
-                        {loading && (
-                        <Modal
-                        animationType="fade"
-                        transparent={true}
-                        visible={loading}
-                        >
-                        <BlurView intensity={80} tint="light" style={styles.loadingOverlay}>
-                            <View style={styles.loadingBox}>
-                            <ActivityIndicator size="large" color="#0000ff" />
-                            <Text style={styles.loadingText}>Scraping recipe...</Text>
+                       
+                    </BlurView>
+                    {loading && (
+                        <Modal animationType="fade" transparent={true} visible={loading}>
+                            <View style={styles.loadingOverlay}>
+                            <BlurView intensity={80} tint="light" style={StyleSheet.absoluteFill}>
+                                <View style={styles.loadingBox}>
+                                <ActivityIndicator size="large" color="#0000ff" />
+                                <Text style={styles.loadingText}>Scraping recipe...</Text>
+                                </View>
+                            </BlurView>
                             </View>
-                        </BlurView>
                         </Modal>
                     )}
-                    </BlurView>
+
                     
         </View>
         
@@ -275,7 +293,21 @@ const styles = StyleSheet.create({
         fontSize: 18,
         color: '#333',
       },
+      bulletText: {
+        fontSize: 16,
+        color: '#333',
+      },
       
+      highlight: {
+        backgroundColor: 'yellow',
+      },
+      
+      ingredientModalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        
+      },
       
   });
 
