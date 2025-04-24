@@ -3,12 +3,26 @@ import { View, Text, StyleSheet,Dimensions, TouchableOpacity } from 'react-nativ
 import { decode } from 'he';
 import { ScrollView } from 'react-native-gesture-handler';
 import Ingredients from "./Ingredients";
+import { ActivityIndicator } from 'react-native';
+import { useState,useEffect } from "react";
+import { Modal } from "react-native";
+
 
 
 export default function InstructionsCard({recipeData,onClose,saveRecipe}){
     const backendURL = "https://recipe-scraper-hk6l.onrender.com";
+    const [loading, setLoading] = useState(false);
+    const [ingredients, setIngredients] = useState([]);
+    const [keywords, setKeywords] = useState([]);
+
 
     const parseIngredients = async() =>{
+        console.log("current ingredients ", ingredients);
+
+        if (ingredients.length > 0) {
+            console.log("Ingredients already cached.");
+            return; 
+          }
         try{
           setLoading(true);
           const response = await fetch(`${backendURL}/parse-ingredients-api`,{
@@ -21,7 +35,16 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
           
           const data = await response.json();
           if (data){
-            console.log(data)
+            setIngredients(data)
+            const stopWords = ['and', 'of', 'with', 'a', 'the', 'to', 'for', 'in', 'on', 'at', 'by', 'from'];
+
+            const words = data
+                .flatMap(ing => ing.name.toLowerCase().split(/\s+/))
+                .map(word => word.replace(/[^a-z]/gi, ''))
+                .filter(word => word && !stopWords.includes(word));
+            
+            console.log("🧠 Highlight keywords:", words);
+            setKeywords(words);
           }
          
     
@@ -33,6 +56,37 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
         }
     
       }
+
+
+    
+
+
+    const highlightMatches = (text, keywords) => {
+        let parts = [text];
+      
+        keywords.forEach((word) => {
+            if (!word) return;
+
+            const regex = new RegExp(`(${word})`, 'gi');
+            
+            parts = parts.flatMap((part) => {
+                if (typeof part === 'string') {
+                return part.split(regex).filter(Boolean).map((chunk) =>
+                    regex.test(chunk) ? { highlight: true, text: chunk } : chunk
+                );
+                }
+                return part;
+            });
+        });
+      
+        return parts.map((part, index) =>
+          typeof part === 'string' ? (
+            <Text key={index}>{part}</Text>
+          ) : (
+            <Text key={index} style={{ backgroundColor: 'yellow' }}>{part.text}</Text>
+          )
+        );
+      };
       
 
     return (
@@ -50,8 +104,9 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             recipeData.instructions.map((instruction, index) =>
                                 typeof instruction === 'string' && instruction.trim().length > 0 ? (
                                     <Text key={index} style={styles.bullet}>
-                                    {"\u2022"} {decode(instruction)}
-                                  </Text>                                  
+                                        {"\u2022"} {highlightMatches(decode(instruction), keywords)}
+                                    </Text>
+                                
                                 ) : null
                             )
                             ) : (
@@ -59,6 +114,12 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             )}
 
                         </ScrollView>
+                        <TouchableOpacity style={styles.saveBtn} onPress={parseIngredients}>
+                            <Text style={styles.btnText}>
+                                Parse Ingredients
+                            </Text>
+                            </TouchableOpacity>
+
         
                         <View style={styles.buttonContainer}>
                             <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
@@ -71,8 +132,25 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                             <Text style={styles.btnText}>Save</Text>
                             </TouchableOpacity>
                         </View>
+  
+                        {loading && (
+                        <Modal
+                        animationType="fade"
+                        transparent={true}
+                        visible={loading}
+                        >
+                        <BlurView intensity={80} tint="light" style={styles.loadingOverlay}>
+                            <View style={styles.loadingBox}>
+                            <ActivityIndicator size="large" color="#0000ff" />
+                            <Text style={styles.loadingText}>Scraping recipe...</Text>
+                            </View>
+                        </BlurView>
+                        </Modal>
+                    )}
                     </BlurView>
+                    
         </View>
+        
     )
 }
 
@@ -173,6 +251,31 @@ const styles = StyleSheet.create({
         justifyContent: "space-around",
         marginTop: 20,
       },
+      loadingOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      },
+      modalContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        
+      },
+    
+      loadingBox: {
+        padding: 20,
+        borderRadius: 10,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      loadingText: {
+        fontSize: 18,
+        color: '#333',
+      },
+      
       
   });
 
