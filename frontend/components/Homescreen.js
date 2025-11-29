@@ -32,7 +32,7 @@ export default function Homescreen({navigation}){
       if (route.params?.selectedRecipe) {
         
         const selectedRecipe = route.params.selectedRecipe;
-        console.log("Raw Instructions:", selectedRecipe.Instructions);
+       
         if (!recipeData || recipeData.title !== selectedRecipe.Title) {
           const newRecipe = {
             title: selectedRecipe.Title,
@@ -60,6 +60,7 @@ export default function Homescreen({navigation}){
     }, [route.params?.selectedRecipe])
   );
 
+  // Clear params so that modal doesn't pop up again
   useEffect(() => {
   if (route.params?.selectedRecipe) {
     navigation.setParams({ selectedRecipe: undefined });
@@ -81,6 +82,7 @@ export default function Homescreen({navigation}){
       
       const data = await response.json();
       if (data){
+        console.log("SCRAPED DATA: ", data)
         setRecipeData(data)
         setModalVisible(true)
       }

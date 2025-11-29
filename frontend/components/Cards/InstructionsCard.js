@@ -55,7 +55,6 @@ export default function InstructionsCard({recipeData,onClose,saveRecipe}){
                 .map(word => word.replace(/[^a-z]/gi, ''))
                 .filter(word => word && !stopWords.includes(word));
             
-            console.log("🧠 Highlight keywords:", words);
             setKeywords(words);
           }
          

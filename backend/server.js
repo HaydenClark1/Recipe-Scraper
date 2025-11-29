@@ -18,7 +18,6 @@ app.use(express.json());
 let jsonData = [];
 
 
-// ✅ Start server immediately
 (async () => {
   jsonData = await loadCSVFromGitHub();
   console.log(jsonData);
@@ -49,7 +48,7 @@ async function loadCSVFromGitHub() {
         .on('error', reject);
     });
   } catch (err) {
-    console.error("❌ Failed to load CSV from GitHub:", err.message);
+    console.error("Failed to load CSV from GitHub:", err.message);
     return [];
   }
 }

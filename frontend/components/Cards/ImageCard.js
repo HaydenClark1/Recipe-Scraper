@@ -10,6 +10,7 @@ const screenWidth = Dimensions.get('window').width;
     return(   
         <View style={styles.container}>
             <BlurView intensity={80} tint="light" style={styles.glassCard}>
+                
                 <Text style={styles.title}>{recipeData.title || "No Title Found"}</Text>
                 <Text style={{marginBlock:7}}></Text>
                 
