@@ -60,13 +60,7 @@ export default function Homescreen({navigation}){
     }, [route.params?.selectedRecipe])
   );
 
-  // Clear params so that modal doesn't pop up again
-  useEffect(() => {
-  if (route.params?.selectedRecipe) {
-    navigation.setParams({ selectedRecipe: undefined });
-  }
-}, [route.params?.selectedRecipe]);
-
+  
 
 
   const scrapWebsite = async() =>{

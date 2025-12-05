@@ -28,7 +28,10 @@ let jsonData = [];
 })();
 
 
-
+/**
+ * Loads the CSV of presaved recipes from my github repo into an array
+ * @returns an array of recipies if found or an empty array if there was an error
+ */
 async function loadCSVFromGitHub() {
   const csvUrl = 'https://raw.githubusercontent.com/HaydenClark1/Recipe-Scraper/main/backend/FoodData.csv';
 
@@ -42,7 +45,7 @@ async function loadCSVFromGitHub() {
         .pipe(csvParser())
         .on('data', (row) => results.push(row))
         .on('end', () => {
-          console.log(`✅ CSV loaded with ${results.length} rows`);
+          console.log(`CSV loaded with ${results.length} rows`);
           resolve(results);
         })
         .on('error', reject);
@@ -55,6 +58,11 @@ async function loadCSVFromGitHub() {
 
 
 
+/**
+ * Given a URL will scrape the recipe to try to find the ingredients, instructions, and any image of the recipe.
+ * Assumes that the recipe data is located in the scripts of a webpage.
+ * 
+ */
 
 app.post("/scrape-recipe", async (req, res) => {
   const { url } = req.body;
@@ -127,11 +135,17 @@ app.post("/scrape-recipe", async (req, res) => {
       image: image || null
     });
   } catch (err) {
-    console.error("💥 Scraping failed:", err.message);
+    console.error("Scraping failed:", err.message);
     return res.status(500).json({ error: "Failed to scrape recipe" });
   }
 });
 
+/**
+ * Split the instructions right before 1+ digits followed by a period and a space.
+ * This assumes that recipies are set up as followes
+ * "1. Mix ingredients 2. Bake ingredients 3. Let cool
+ * @returns an array of the recipe split up by steps
+ */
 function splitInstructions(instructions){
   const splitFallback = [];
 
@@ -147,7 +161,10 @@ function splitInstructions(instructions){
 
   return splitFallback;
 }
-
+/**
+ * A function that recursively searches through arrays and objects to find the first object to include "@type": "Recipe"
+ * @returns the object where @type involves recipe or null if nothing found
+ */
 function findRecipeLike(obj) {
   if (Array.isArray(obj)) {
     for (const item of obj) {
@@ -162,14 +179,14 @@ function findRecipeLike(obj) {
     ) {
       return obj;
     }
-
+    // If @type is an array such as ["Article", "Recipe"] search through array for anything matching recipe
     if (
       Array.isArray(type) &&
       type.some(t => typeof t === "string" && t.toLowerCase().includes("recipe"))
     ) {
       return obj;
     }
-
+    // If no matches found, search the objects children
     for (const key in obj) {
       const result = findRecipeLike(obj[key]);
       if (result) return result;
@@ -270,6 +287,10 @@ function findInstructions (obj,$ = null) {
   return null;
 
 }
+
+/**
+ * Used to try and find the ingredients to be used to highlight in instructions page.
+ */
 app.post("/parse-ingredients-api", async (req,res) => {
     const apiKey = process.env.spoon;
 
@@ -414,5 +435,5 @@ const fatSecretApi = async (ingredient) => {
   }
 }
 app.get("/", (req, res) => {
-  res.send("✅ Backend is up!");
+  res.send("Backend is up!");
 });
