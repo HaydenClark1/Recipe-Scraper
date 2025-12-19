@@ -75,6 +75,7 @@ export default function Homescreen({navigation}){
       });
       
       const data = await response.json();
+      
       if (data){
         console.log("SCRAPED DATA: ", data)
         setRecipeData(data)
@@ -121,6 +122,45 @@ export default function Homescreen({navigation}){
     }
   }
 
+  /* 
+   * Renders an item to be used in the carousel format
+  */
+  const renderItem = ({ item }) => {
+    if (!recipeData) return null;
+
+    switch (item.type) {
+      case 'image':
+        return (
+          <ImageCard
+            recipeData={recipeData}
+            onClose={closeModal}
+            saveRecipe={saveRecipe}
+          />
+        );
+
+      case 'ingredients':
+        return (
+          <Ingredients
+            recipeData={recipeData}
+            onClose={closeModal}
+            saveRecipe={saveRecipe}
+          />
+        );
+
+      case 'instructions':
+        return (
+          <InstructionsCard
+            recipeData={recipeData}
+            onClose={closeModal}
+            saveRecipe={saveRecipe}
+          />
+        );
+
+      default:
+        return null;
+    }
+};
+
 
   return (
     <ImageBackground
@@ -156,90 +196,41 @@ export default function Homescreen({navigation}){
 
 
         {recipeData && (
-
-            <Modal
-            animationType="slide"
-            transparent={false}
-            visible={modalVisible}
-            onRequestClose={closeModal}
-            >
-            <View style={styles.modalContainer}>
-              <Carousel
-                defaultIndex={0}
-                loop={false}
-                width={screenWidth}
-                height={screenHeight * 0.8}
-                autoPlay={false}
-                onSnapToItem={(index) => setCurrentIndex(index)}
-                data={[
-                  { id: 'image', type: 'image' },
-                  { id: 'ingredients', type: 'ingredients' },
-                  { id: 'instructions', type: 'instructions' },
-                  //{ id: 'nutrition', type: 'nutrition'}
-                ]}
-                scrollAnimationDuration={400}
-                renderItem={({ item }) => {
-                  if (item.type === 'image') {
-                    return (
-                      <ImageCard
-                        recipeData={recipeData}
-                        onClose={() => setModalVisible(false)}
-                        saveRecipe={saveRecipe}
-                      />
-                    );
-                  } else if (item.type === 'ingredients') {
-                    return (
-                      <Ingredients
-                        recipeData={recipeData}
-                        onClose={() => setModalVisible(false)}
-                        saveRecipe={saveRecipe}
-                      />
-                    );
-                  } else if (item.type === 'instructions') {
-                    return (
-                      <InstructionsCard
-                        recipeData={recipeData}
-                        onClose={() => setModalVisible(false)}
-                        saveRecipe={saveRecipe}
-                      />
-                    );
-                  } 
-                  /*else if (item.type === 'nutrition') {
-                    return (
-                      <NutritionCard
-                        recipeData={recipeData}
-                        onClose={() => setModalVisible(false)}
-                        saveRecipe={saveRecipe}
-                      />
-                    );
-                  }*/
-                  return null;
-                }}
-              />
-
-              <PaginationDots key = {carouselKey}currentIndex={currentIndex} total={3} />
-
-             
-            </View>
-            </Modal>
-
-
-        )}
-
-
-        {loading && (
           <Modal
-            animationType="fade"
-            transparent={true}
-            visible={loading}
-          >
-            <BlurView intensity={80} tint="light" style={styles.loadingOverlay}>
-              <View style={styles.loadingBox}>
-                <ActivityIndicator size="large" color="#0000ff" />
-                <Text style={styles.loadingText}>Scraping recipe...</Text>
-              </View>
-            </BlurView>
-          </Modal>
+              animationType="fade"
+              transparent={true}
+              visible={loading || modalVisible}
+              onRequestClose={closeModal}
+            >
+              {loading ? (
+                <BlurView intensity={80} tint="light" style={styles.loadingOverlay}>
+                  <View style={styles.loadingBox}>
+                    <ActivityIndicator size="large" />
+                    <Text style={styles.loadingText}>Scraping recipe...</Text>
+                  </View>
+                </BlurView>
+              ) : (
+                <View style={styles.modalContainer}>
+                  <Carousel
+                    loop={false}
+                    width={screenWidth}
+                    height={screenHeight * 0.8}
+                    data={[
+                      { id: 'image', type: 'image' },
+                      { id: 'ingredients', type: 'ingredients' },
+                      { id: 'instructions', type: 'instructions' },
+                    ]}
+                    onSnapToItem={setCurrentIndex}
+                    renderItem={renderItem}
+                  />
+                  <PaginationDots
+                    key={carouselKey}
+                    currentIndex={currentIndex}
+                    total={3}
+                  />
+                </View>
+              )}
+            </Modal>
         )}
 
 
