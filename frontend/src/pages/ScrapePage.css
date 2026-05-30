@@ -1,0 +1,49 @@
+.scrape-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.scrape-main {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scrape-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scrape-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.scrape-input:focus {
+  border-color: var(--accent);
+}
+
+.scrape-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-md);
+  font-size: 16px;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.scrape-btn:disabled {
+  opacity: 0.5;
+}
