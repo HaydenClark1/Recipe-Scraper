@@ -1,0 +1,25 @@
+.error-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: #fff3f3;
+  border-radius: var(--radius-md);
+  margin: 16px;
+}
+
+.error-text {
+  color: #c0392b;
+  font-size: 14px;
+  text-align: center;
+}
+
+.error-retry {
+  padding: 8px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+}
