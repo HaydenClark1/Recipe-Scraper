@@ -1,0 +1,8 @@
+{
+  "appId": "com.haydenclark.recipescraper",
+  "appName": "Recipe Scraper",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
