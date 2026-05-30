@@ -1,0 +1,28 @@
+.ingredients-card {
+  background: var(--surface);
+  min-height: 100%;
+}
+
+.ingredients-list {
+  list-style: none;
+  padding: 0 16px 24px;
+}
+
+.ingredients-item {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.ingredients-item:last-child {
+  border-bottom: none;
+}
+
+.ingredients-item::before {
+  content: '•';
+  color: var(--accent);
+  font-weight: bold;
+  margin-right: 8px;
+}
