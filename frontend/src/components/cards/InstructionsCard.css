@@ -1,0 +1,41 @@
+.instructions-card {
+  background: var(--surface);
+  min-height: 100%;
+}
+
+.instructions-list {
+  list-style: none;
+  padding: 0 16px 24px;
+  counter-reset: step;
+}
+
+.instructions-step {
+  padding: 12px 0 12px 36px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  position: relative;
+  counter-increment: step;
+}
+
+.instructions-step:last-child {
+  border-bottom: none;
+}
+
+.instructions-step::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 24px;
+  height: 24px;
+  background: var(--accent);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
