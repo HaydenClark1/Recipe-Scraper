@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { scrapeRecipe } from '../api/recipes.js'
 import { normalizeScraped } from '../lib/normalize.js'
@@ -17,6 +17,10 @@ export function ScrapePage() {
   const { setRecipe } = useRecipe()
   const navigate = useNavigate()
   const timerRef = useRef(null)
+
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current)
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()

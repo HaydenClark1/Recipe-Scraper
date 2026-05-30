@@ -6,7 +6,7 @@ function highlightIngredients(text, names) {
   if (!names.length) return text
   const sorted = [...names].sort((a, b) => b.length - a.length)
   const escaped = sorted.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const pattern = new RegExp(`(${escaped.join('|')})`, 'gi')
+  const pattern = new RegExp(`(\\b(?:${escaped.join('|')})\\b)`, 'gi')
   const parts = text.split(pattern)
   return parts.map((part, i) => {
     const isMatch = names.some(n => n.toLowerCase() === part.toLowerCase())
