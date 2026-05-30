@@ -1,0 +1,31 @@
+.saved-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.saved-main {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.saved-empty {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.saved-empty__text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.saved-empty__hint {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.saved-list {
+  list-style: none;
+}
