@@ -1,0 +1,35 @@
+.ingredients-card {
+  background: var(--surface);
+  min-height: 100%;
+}
+
+.ingredients-list {
+  list-style: none;
+  padding: 0 20px 24px;
+}
+
+.ingredients-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+.ingredients-item:last-child {
+  border-bottom: none;
+}
+
+.ingredients-item::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin-top: 5px;
+  align-self: flex-start;
+}

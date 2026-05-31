@@ -1,0 +1,60 @@
+.pagination-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s, transform 0.2s, width 0.2s, border-radius 0.2s;
+  flex-shrink: 0;
+}
+
+.dot--active {
+  background: var(--accent);
+  transform: scale(1.2);
+}
+
+/* Desktop: show labels as pill tabs */
+@media (min-width: 768px) {
+  .pagination-dots {
+    gap: 8px;
+    padding: 12px 16px;
+  }
+
+  .dot {
+    width: auto;
+    height: auto;
+    border-radius: 20px;
+    background: transparent;
+    padding: 6px 14px;
+    transform: none;
+    border: 1.5px solid var(--border);
+  }
+
+  .dot-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+  }
+
+  .dot--active {
+    background: var(--accent-muted);
+    border-color: var(--accent-light);
+    transform: none;
+  }
+
+  .dot--active .dot-label {
+    color: var(--accent-dark);
+    font-weight: 600;
+  }
+}

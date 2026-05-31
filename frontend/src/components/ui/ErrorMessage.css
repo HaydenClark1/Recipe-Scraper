@@ -1,0 +1,33 @@
+.error-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 20px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-lg);
+  margin: 16px;
+}
+
+.error-text {
+  color: #b91c1c;
+  font-size: 14px;
+  text-align: center;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+.error-retry {
+  padding: 8px 20px;
+  background: var(--accent);
+  color: white;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.error-retry:hover {
+  background: var(--accent-dark);
+}

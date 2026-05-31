@@ -1,0 +1,35 @@
+.nutrition-card {
+  background: var(--surface);
+  min-height: 100%;
+}
+
+.nutrition-list {
+  list-style: none;
+  padding: 0 20px 24px;
+}
+
+.nutrition-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.nutrition-item:last-child {
+  border-bottom: none;
+}
+
+.nutrition-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.nutrition-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: right;
+  font-feature-settings: 'tnum';
+}
