@@ -9,8 +9,5 @@ export const searchRecipes = (search) =>
 export const getNutrition = (ingredients) =>
   apiClient('/get-nutrition', { ingredients })
 
-export const parseIngredients = (ingredients) =>
-  apiClient('/parse-ingredients-api', { ingredients })
-
 export const saveRecipe = (recipe) =>
   apiClient('/save-recipe', { recipe })

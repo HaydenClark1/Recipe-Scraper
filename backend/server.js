@@ -85,44 +85,6 @@ app.post("/scrape-recipe", async (req, res) => {
   }
 });
 
-/**
- * Used to try and find the ingredients to be used to highlight in instructions page.
- */
-app.post("/parse-ingredients-api", async (req,res) => {
-    const apiKey = process.env.spoon;
-
-    if(!apiKey){
-      return res.status(500).json({ error: "API key missing from environment" });
-    }
-
-    console.log("API KEY: " , apiKey);
-
-    const { ingredients } = req.body;
-
-    try {
-      const response = await fetch(
-        `https://api.spoonacular.com/recipes/parseIngredients?apiKey=${apiKey}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: new URLSearchParams({
-            ingredientList: Array.isArray(ingredients) ? ingredients.join('\n') : ingredients,
-            servings: 1,
-          }),
-        }
-      );
-  
-      const data = await response.json();
-      res.status(200).json(data);
-    } catch (err) {
-      console.error("Spoonacular request failed:", err.message);
-      res.status(500).json({ error: "Failed to fetch data from Spoonacular" });
-    }
-
-})
-
 app.post("/search-recipies", async (req, res) => {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   const {search} = req.body

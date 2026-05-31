@@ -9,7 +9,20 @@
   width: 100%;
   height: 220px;
   object-fit: cover;
+  object-position: center;
   flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .image-card__img {
+    height: 320px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .image-card__img {
+    height: 400px;
+  }
 }
 
 .image-card__placeholder {

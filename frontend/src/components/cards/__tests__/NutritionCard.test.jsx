@@ -3,7 +3,6 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { NutritionCard } from '../NutritionCard.jsx'
 
 vi.mock('../../../api/recipes.js', () => ({
-  parseIngredients: vi.fn(),
   getNutrition: vi.fn(),
 }))
 

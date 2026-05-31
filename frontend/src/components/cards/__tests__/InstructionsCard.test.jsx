@@ -1,38 +1,45 @@
-import { describe, it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect } from 'vitest'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { InstructionsCard } from '../InstructionsCard.jsx'
 
-vi.mock('../../../api/recipes.js', () => ({
-  parseIngredients: vi.fn().mockResolvedValue([
-    { name: 'flour' },
-    { name: 'eggs' },
-  ]),
-}))
-
 const recipe = {
-  ingredients: ['2 cups flour', '3 eggs'],
-  instructions: ['Mix flour and eggs together', 'Pour into pan'],
+  ingredients: [
+    '1/2 tsp Italian seasoning',
+    '2 boneless skinless chicken breasts',
+    '2 Tbsp butter',
+    '2 Tbsp olive oil',
+  ],
+  instructions: [
+    'Season each breast with Italian seasoning, salt, and black pepper.',
+    'Heat a large skillet over medium heat and add the olive oil and 1 Tbsp of butter.',
+  ],
 }
 
-it('renders all instruction steps', async () => {
-  render(<InstructionsCard recipe={recipe} />)
-  expect(screen.getByText(/Mix flour/)).toBeInTheDocument()
-  expect(screen.getByText(/Pour into pan/)).toBeInTheDocument()
-})
-
-it('highlights ingredient names in steps after loading', async () => {
-  render(<InstructionsCard recipe={recipe} />)
-  await waitFor(() => {
-    const marks = document.querySelectorAll('mark.highlight')
-    expect(marks.length).toBeGreaterThan(0)
+describe('InstructionsCard', () => {
+  it('renders all instruction steps', () => {
+    render(<InstructionsCard recipe={recipe} />)
+    const steps = screen.getAllByRole('listitem')
+    expect(steps).toHaveLength(2)
+    expect(steps[0].textContent).toMatch(/Season each breast/)
+    expect(steps[1].textContent).toMatch(/Heat a large skillet/)
   })
-})
 
-it('renders without error if parseIngredients fails', async () => {
-  const { parseIngredients } = await import('../../../api/recipes.js')
-  parseIngredients.mockRejectedValueOnce(new Error('API down'))
-  render(<InstructionsCard recipe={recipe} />)
-  await waitFor(() => {
-    expect(screen.getByText(/Mix flour/)).toBeInTheDocument()
+  it('makes an ingredient without an inline amount clickable and shows its amount', async () => {
+    const user = userEvent.setup()
+    render(<InstructionsCard recipe={recipe} />)
+    const btn = screen.getByRole('button', { name: 'Italian seasoning' })
+    await user.click(btn)
+    expect(screen.getByRole('tooltip')).toHaveTextContent('1/2 tsp Italian seasoning')
+  })
+
+  it('does not make "butter" clickable when the amount is already inline', () => {
+    render(<InstructionsCard recipe={recipe} />)
+    expect(screen.queryByRole('button', { name: 'butter' })).toBeNull()
+  })
+
+  it('renders empty state when there are no instructions', () => {
+    render(<InstructionsCard recipe={{ ingredients: [], instructions: [] }} />)
+    expect(screen.getByText('No instructions found.')).toBeInTheDocument()
   })
 })
