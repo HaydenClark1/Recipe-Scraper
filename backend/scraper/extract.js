@@ -10,7 +10,7 @@ function findRecipeLike(obj) {
     const type = obj['@type']
     if (typeof type === 'string' && type.toLowerCase().includes('recipe')) return obj
     if (Array.isArray(type) && type.some((t) => typeof t === 'string' && t.toLowerCase().includes('recipe'))) return obj
-    for (const key in obj) {
+    for (const key of Object.keys(obj)) {
       const r = findRecipeLike(obj[key])
       if (r) return r
     }
@@ -36,8 +36,10 @@ function extractImage($, recipe) {
   const img = recipe && recipe.image
   let url = null
   if (Array.isArray(img)) {
-    const first = img[0]
-    url = typeof first === 'string' ? first : (first && first.url) || null
+    for (const item of img) {
+      if (typeof item === 'string' && item) { url = item; break }
+      if (item && typeof item === 'object' && item.url) { url = item.url; break }
+    }
   } else if (img && typeof img === 'object') {
     url = img.url || null
   } else if (typeof img === 'string') {
@@ -64,10 +66,12 @@ function extractFromDom($) {
 }
 
 function extractFromMicrodata($) {
-  const scope = $('[itemtype*="Recipe"]').first()
+  const scope = $('[itemtype~="https://schema.org/Recipe"],[itemtype~="http://schema.org/Recipe"]').first()
   if (!scope.length) return null
   const textOf = (prop) => scope.find(`[itemprop="${prop}"]`).map((_, el) => $(el).text().trim()).get().filter(Boolean)
-  const name = scope.find('[itemprop="name"]').first().text().trim()
+  const name = scope.find('[itemprop="name"]').filter((_, el) => {
+    return $(el).closest('[itemscope]').is(scope)
+  }).first().text().trim()
   const recipeIngredient = textOf('recipeIngredient')
   const recipeInstructions = textOf('recipeInstructions')
   if (!recipeIngredient.length && !recipeInstructions.length) return null

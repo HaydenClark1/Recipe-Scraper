@@ -1,6 +1,6 @@
 const test = require('node:test')
 const assert = require('node:assert')
-const { findRecipeLike, extractFromJsonLd } = require('../extract')
+const { findRecipeLike, extractFromJsonLd, extractImage, extractFromDom, extractFromMicrodata, extractRecipe } = require('../extract')
 
 const cheerio = require('cheerio')
 
@@ -33,8 +33,6 @@ test('extractFromJsonLd returns null when no ld+json present', () => {
   assert.strictEqual(extractFromJsonLd($), null)
 })
 
-const { extractImage } = require('../extract')
-
 test('extractImage reads first URL from an image array of strings', () => {
   const $ = cheerio.load('<html></html>')
   assert.strictEqual(extractImage($, { image: ['https://x/a.jpg', 'https://x/b.jpg'] }), 'https://x/a.jpg')
@@ -59,8 +57,6 @@ test('extractImage returns null when no image anywhere', () => {
   const $ = cheerio.load('<html></html>')
   assert.strictEqual(extractImage($, {}), null)
 })
-
-const { extractFromDom, extractFromMicrodata, extractRecipe } = require('../extract')
 
 test('extractFromDom reads WordPress Recipe Maker markup', () => {
   const html = `<html><body>
@@ -110,4 +106,16 @@ test('extractRecipe prefers JSON-LD and attaches image', () => {
 
 test('extractRecipe returns null when nothing is extractable', () => {
   assert.strictEqual(extractRecipe('<html><body><p>nope</p></body></html>'), null)
+})
+
+test('extractRecipe falls back to microdata when no JSON-LD present', () => {
+  const html = `<html><body>
+    <div itemscope itemtype="https://schema.org/Recipe">
+      <span itemprop="name">Microdata Recipe</span>
+      <li itemprop="recipeIngredient">2 eggs</li>
+    </div>
+  </body></html>`
+  const out = extractRecipe(html)
+  assert.ok(out !== null, 'should find a recipe via microdata')
+  assert.strictEqual(out.recipe.name, 'Microdata Recipe')
 })
