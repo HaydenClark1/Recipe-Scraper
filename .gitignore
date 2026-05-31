@@ -38,3 +38,13 @@ yarn-error.*
 #claude
 .superpowers
 .claude
+docs
+.kiro
+
+# MCP credentials
+.mcp.json
+# Xanther CLI config (contains API key)
+.xanther/
+.windsurfrules
+.cursorrules
+.clinerules

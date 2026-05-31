@@ -35,7 +35,8 @@ function pluralize(word) {
 export function parseIngredientLine(raw) {
   const original = String(raw == null ? '' : raw).trim()
 
-  let work = original.replace(/\([^)]*\)/g, ' ')
+  let work = original
+  while (/\([^()]*\)/.test(work)) work = work.replace(/\([^()]*\)/g, ' ')
   const comma = work.indexOf(',')
   if (comma !== -1) work = work.slice(0, comma)
   work = work.replace(/\s+/g, ' ').trim()
@@ -66,6 +67,26 @@ export function parseIngredientLine(raw) {
   if (head && head.length >= 3) {
     const base = singularize(head)
     terms.add(head)
+    terms.add(base)
+    terms.add(pluralize(base))
+  }
+  // When the head noun is itself a unit (e.g. "cloves" in "garlic cloves"),
+  // the food name precedes it — promote it so instruction text can match it.
+  if (head && UNITS.has(head)) {
+    const firstFood = words.find((w) => w !== head && !UNITS.has(w))
+    if (firstFood && firstFood.length >= 3) {
+      const base = singularize(firstFood)
+      terms.add(firstFood)
+      terms.add(base)
+      terms.add(pluralize(base))
+    }
+  }
+  // Promote all other non-head content words (e.g. "chicken" in "chicken breasts")
+  // so they can be matched standalone in instruction text.
+  for (const w of words) {
+    if (w === head || w.length < 3) continue
+    const base = singularize(w)
+    terms.add(w)
     terms.add(base)
     terms.add(pluralize(base))
   }

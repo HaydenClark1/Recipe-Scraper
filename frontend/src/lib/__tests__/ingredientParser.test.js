@@ -28,6 +28,13 @@ describe('parseIngredientLine', () => {
     expect(r.name).toBe('flour')
   })
 
+  it('drops nested parentheticals', () => {
+    const r = parseIngredientLine('2 shallots (chopped (2/3 cup))')
+    expect(r.name).toBe('shallots')
+    expect(r.matchTerms).toContain('shallot')
+    expect(r.matchTerms).toContain('shallots')
+  })
+
   it('handles mixed numbers and ranges', () => {
     expect(parseIngredientLine('1 1/2 cups sugar').amountText).toBe('1 1/2 cups')
     expect(parseIngredientLine('2-3 cloves garlic').amountText).toBe('2-3 cloves')
@@ -49,5 +56,15 @@ describe('parseIngredientLine', () => {
   it('includes the full multiword name as a match term', () => {
     expect(parseIngredientLine('1/2 tsp Italian seasoning').matchTerms)
       .toContain('italian seasoning')
+  })
+
+  it('includes the food name as a match term when the unit follows it ("4 garlic cloves")', () => {
+    const r = parseIngredientLine('4 garlic cloves')
+    expect(r.matchTerms).toContain('garlic')
+  })
+
+  it('includes non-head content words as match terms ("2 boneless skinless chicken breasts" → chicken)', () => {
+    const r = parseIngredientLine('2 boneless skinless chicken breasts')
+    expect(r.matchTerms).toContain('chicken')
   })
 })
