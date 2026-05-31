@@ -66,3 +66,57 @@ test('normalizeIngredients returns [] for non-arrays', () => {
   assert.deepStrictEqual(N.normalizeIngredients(null), [])
   assert.deepStrictEqual(N.normalizeIngredients('eggs'), [])
 })
+
+test('normalizeInstructions flattens a HowToStep array', () => {
+  const raw = [
+    { '@type': 'HowToStep', text: 'Fillet the chicken.' },
+    { '@type': 'HowToStep', text: 'Season &amp; sear.' },
+  ]
+  assert.deepStrictEqual(N.normalizeInstructions(raw), [
+    'Fillet the chicken.',
+    'Season & sear.',
+  ])
+})
+
+test('normalizeInstructions flattens HowToSection groups', () => {
+  const raw = [
+    { '@type': 'HowToSection', itemListElement: [
+      { '@type': 'HowToStep', text: 'Make the sauce.' },
+      { '@type': 'HowToStep', text: 'Simmer 5 min.' },
+    ] },
+  ]
+  assert.deepStrictEqual(N.normalizeInstructions(raw), [
+    'Make the sauce.',
+    'Simmer 5 min.',
+  ])
+})
+
+test('normalizeInstructions accepts plain string steps', () => {
+  assert.deepStrictEqual(N.normalizeInstructions(['Boil water.', 'Add pasta.']), [
+    'Boil water.',
+    'Add pasta.',
+  ])
+})
+
+test('normalizeInstructions splits a single crammed step and strips leading numbers', () => {
+  const raw = [{
+    '@type': 'HowToStep',
+    text: '1. Preheat the oven to 450 F. Line a baking sheet with oil.2. On the sheet pan, mix the chicken.3. Meanwhile, make the sauce.4. Remove the vegetables.',
+  }]
+  assert.deepStrictEqual(N.normalizeInstructions(raw), [
+    'Preheat the oven to 450 F. Line a baking sheet with oil.',
+    'On the sheet pan, mix the chicken.',
+    'Meanwhile, make the sauce.',
+    'Remove the vegetables.',
+  ])
+})
+
+test('normalizeInstructions does not split decimals inside a single step', () => {
+  const raw = [{ '@type': 'HowToStep', text: 'Add 1.5 cups of flour and stir.' }]
+  assert.deepStrictEqual(N.normalizeInstructions(raw), ['Add 1.5 cups of flour and stir.'])
+})
+
+test('normalizeInstructions returns [] for empty/missing input', () => {
+  assert.deepStrictEqual(N.normalizeInstructions(null), [])
+  assert.deepStrictEqual(N.normalizeInstructions([]), [])
+})
