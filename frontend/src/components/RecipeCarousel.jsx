@@ -25,7 +25,11 @@ export function RecipeCarousel({ slides }) {
           ))}
         </div>
       </div>
-      <PaginationDots total={slides.length} current={current} />
+      <PaginationDots
+        total={slides.length}
+        current={current}
+        labels={['Overview', 'Ingredients', 'Instructions', 'Nutrition']}
+      />
     </div>
   )
 }

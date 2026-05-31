@@ -49,9 +49,13 @@ export function ScrapePage() {
   return (
     <div className="scrape-page">
       <header className="page-header">
-        <h1 className="page-title">Recipe Scraper</h1>
+        <h1 className="page-title">Scrape</h1>
       </header>
       <main className="scrape-main">
+        <div className="scrape-hero">
+          <p className="scrape-hero__title">Paste a recipe URL</p>
+          <p className="scrape-hero__subtitle">Instantly extract ingredients, steps, and nutrition info from any recipe page.</p>
+        </div>
         <form className="scrape-form" onSubmit={handleSubmit}>
           <input
             className="scrape-input"

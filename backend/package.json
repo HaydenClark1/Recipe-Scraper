@@ -20,6 +20,7 @@
     "he": "^1.2.0",
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.3",
+    "puppeteer": "^25.1.0",
     "react-native-gesture-handler": "^2.25.0",
     "react-native-reanimated": "^3.17.2",
     "react-native-reanimated-carousel": "^4.0.2",

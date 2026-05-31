@@ -5,15 +5,15 @@
 
 .instructions-list {
   list-style: none;
-  padding: 0 16px 24px;
+  padding: 0 20px 24px;
   counter-reset: step;
 }
 
 .instructions-step {
-  padding: 12px 0 12px 36px;
+  padding: 14px 0 14px 44px;
   border-bottom: 1px solid var(--border);
   font-size: 15px;
-  line-height: 1.6;
+  line-height: 1.65;
   color: var(--text-primary);
   position: relative;
   counter-increment: step;
@@ -27,15 +27,16 @@
   content: counter(step);
   position: absolute;
   left: 0;
-  top: 12px;
-  width: 24px;
-  height: 24px;
-  background: var(--accent);
-  color: white;
+  top: 14px;
+  width: 26px;
+  height: 26px;
+  background: var(--accent-muted);
+  color: var(--accent-dark);
+  border: 1.5px solid var(--accent-light);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }

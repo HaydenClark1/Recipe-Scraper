@@ -18,8 +18,21 @@
 }
 
 .detail-back {
-  font-size: 17px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
   color: var(--accent);
   padding: 8px 0;
   font-weight: 500;
+  transition: color 0.15s;
+}
+
+.detail-back:hover {
+  color: var(--accent-dark);
+}
+
+.detail-back__icon {
+  width: 18px;
+  height: 18px;
 }

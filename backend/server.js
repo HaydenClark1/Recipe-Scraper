@@ -5,8 +5,6 @@ const Fuse = require('fuse.js');
 const fs = require('fs');
 const csvParser = require('csv-parser');
 require("dotenv").config();
-const jwt = require("jsonwebtoken");
-
 const { Parser } = require("json2csv");
 const {Readable} = require("stream");
 
