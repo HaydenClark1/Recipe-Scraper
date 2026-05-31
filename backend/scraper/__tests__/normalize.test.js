@@ -52,3 +52,17 @@ test('normalizeYield handles plain and empty values', () => {
   assert.strictEqual(N.normalizeYield(null), null)
   assert.strictEqual(N.normalizeYield([]), null)
 })
+
+test('normalizeIngredients cleans each entry and drops empties', () => {
+  const raw = ['1/2 tsp salt &amp; pepper', '  ', '<span>2 eggs</span>', '½ cup milk']
+  assert.deepStrictEqual(N.normalizeIngredients(raw), [
+    '1/2 tsp salt & pepper',
+    '2 eggs',
+    '1/2 cup milk',
+  ])
+})
+
+test('normalizeIngredients returns [] for non-arrays', () => {
+  assert.deepStrictEqual(N.normalizeIngredients(null), [])
+  assert.deepStrictEqual(N.normalizeIngredients('eggs'), [])
+})
