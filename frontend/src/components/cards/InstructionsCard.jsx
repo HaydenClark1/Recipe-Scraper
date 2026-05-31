@@ -1,33 +1,22 @@
-import { useState, useEffect } from 'react'
-import { parseIngredients } from '../../api/recipes.js'
+import { useMemo, useState, useCallback } from 'react'
+import { parseIngredientLine } from '../../lib/ingredientParser.js'
+import { buildSegments } from '../../lib/highlightInstruction.js'
+import { IngredientPopover } from '../IngredientPopover.jsx'
 import './InstructionsCard.css'
 
-function highlightIngredients(text, names) {
-  if (!names.length) return text
-  const sorted = [...names].sort((a, b) => b.length - a.length)
-  const escaped = sorted.map(n => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-  const pattern = new RegExp(`(\\b(?:${escaped.join('|')})\\b)`, 'gi')
-  const parts = text.split(pattern)
-  return parts.map((part, i) => {
-    const isMatch = names.some(n => n.toLowerCase() === part.toLowerCase())
-    return isMatch ? <mark key={i} className="highlight">{part}</mark> : part
-  })
-}
-
 export function InstructionsCard({ recipe }) {
-  const [ingNames, setIngNames] = useState([])
+  const parsed = useMemo(
+    () => recipe.ingredients.map(parseIngredientLine),
+    [recipe.ingredients]
+  )
+  const [popover, setPopover] = useState(null) // { anchorEl, text } | null
 
-  useEffect(() => {
-    if (!recipe.ingredients.length) return
-    parseIngredients(recipe.ingredients)
-      .then(data => {
-        const names = Array.isArray(data)
-          ? data.map(item => item.name).filter(Boolean)
-          : []
-        setIngNames(names)
-      })
-      .catch(() => {})
-  }, [recipe.ingredients])
+  const handleClick = useCallback((event, ingredient) => {
+    const anchorEl = event.currentTarget
+    setPopover((prev) =>
+      prev && prev.anchorEl === anchorEl ? null : { anchorEl, text: ingredient.display }
+    )
+  }, [])
 
   return (
     <div className="instructions-card">
@@ -38,10 +27,30 @@ export function InstructionsCard({ recipe }) {
         <ol className="instructions-list">
           {recipe.instructions.map((step, i) => (
             <li key={i} className="instructions-step">
-              {highlightIngredients(step, ingNames)}
+              {buildSegments(step, parsed).map((seg, j) =>
+                seg.ingredient ? (
+                  <button
+                    key={j}
+                    type="button"
+                    className="ingredient-link"
+                    onClick={(e) => handleClick(e, seg.ingredient)}
+                  >
+                    {seg.text}
+                  </button>
+                ) : (
+                  <span key={j}>{seg.text}</span>
+                )
+              )}
             </li>
           ))}
         </ol>
+      )}
+      {popover && (
+        <IngredientPopover
+          anchorEl={popover.anchorEl}
+          text={popover.text}
+          onClose={() => setPopover(null)}
+        />
       )}
     </div>
   )
