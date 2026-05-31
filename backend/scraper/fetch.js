@@ -1,5 +1,4 @@
 const axios = require('axios')
-const puppeteer = require('puppeteer')
 
 const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -20,6 +19,7 @@ const BROWSER_HEADERS = {
 }
 
 async function fetchHtmlWithPuppeteer(url) {
+  const { default: puppeteer } = await import('puppeteer')
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
