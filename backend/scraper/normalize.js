@@ -28,10 +28,10 @@ function humanizeDuration(iso) {
   if (!m) return iso
   const [, d, h, min] = m
   const parts = []
-  if (d) parts.push(`${+d} day${+d > 1 ? 's' : ''}`)
-  if (h) parts.push(`${+h} hr`)
-  if (min) parts.push(`${+min} min`)
-  if (!parts.length) return iso
+  if (+d) parts.push(`${+d} day${+d > 1 ? 's' : ''}`)
+  if (+h) parts.push(`${+h} hr`)
+  if (+min) parts.push(`${+min} min`)
+  if (!parts.length) return null
   return parts.join(' ')
 }
 
@@ -67,7 +67,7 @@ function flattenSteps(raw) {
 function splitCrammed(steps) {
   if (steps.length !== 1) return steps
   const parts = steps[0]
-    .split(/(?=\d+\.(?:\s|[A-Z]))/g)
+    .split(/(?<!\d)(?=\d+\.(?:\s|[A-Z]))/g)
     .map((s) => s.trim())
     .filter(Boolean)
   return parts.length > 1 ? parts : steps

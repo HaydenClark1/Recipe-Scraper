@@ -120,3 +120,16 @@ test('normalizeInstructions returns [] for empty/missing input', () => {
   assert.deepStrictEqual(N.normalizeInstructions(null), [])
   assert.deepStrictEqual(N.normalizeInstructions([]), [])
 })
+
+test('normalizeInstructions splits correctly when step numbers exceed 9', () => {
+  const raw = [{ '@type': 'HowToStep', text: '1. Mix.2. Bake.10. Serve.' }]
+  assert.deepStrictEqual(N.normalizeInstructions(raw), [
+    'Mix.',
+    'Bake.',
+    'Serve.',
+  ])
+})
+
+test('humanizeDuration returns null for PT0M', () => {
+  assert.strictEqual(N.humanizeDuration('PT0M'), null)
+})
