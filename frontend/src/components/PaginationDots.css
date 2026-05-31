@@ -17,6 +17,10 @@
   flex-shrink: 0;
 }
 
+.dot-label {
+  display: none;
+}
+
 .dot--active {
   background: var(--accent);
   transform: scale(1.2);
