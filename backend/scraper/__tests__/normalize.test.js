@@ -37,3 +37,18 @@ test('humanizeDuration passes through non-ISO and empty values', () => {
   assert.strictEqual(N.humanizeDuration(null), null)
   assert.strictEqual(N.humanizeDuration(undefined), null)
 })
+
+test('normalizeYield unwraps arrays', () => {
+  assert.strictEqual(N.normalizeYield(['4']), '4')
+})
+
+test('normalizeYield strips leading Serves/Makes', () => {
+  assert.strictEqual(N.normalizeYield('Serves 6'), '6')
+  assert.strictEqual(N.normalizeYield('Makes 12 cookies'), '12 cookies')
+})
+
+test('normalizeYield handles plain and empty values', () => {
+  assert.strictEqual(N.normalizeYield('4'), '4')
+  assert.strictEqual(N.normalizeYield(null), null)
+  assert.strictEqual(N.normalizeYield([]), null)
+})
