@@ -24,3 +24,16 @@ test('cleanText handles null and undefined', () => {
   assert.strictEqual(N.cleanText(null), '')
   assert.strictEqual(N.cleanText(undefined), '')
 })
+
+test('humanizeDuration converts ISO 8601 durations', () => {
+  assert.strictEqual(N.humanizeDuration('PT40M'), '40 min')
+  assert.strictEqual(N.humanizeDuration('PT10M'), '10 min')
+  assert.strictEqual(N.humanizeDuration('PT1H30M'), '1 hr 30 min')
+  assert.strictEqual(N.humanizeDuration('PT2H'), '2 hr')
+})
+
+test('humanizeDuration passes through non-ISO and empty values', () => {
+  assert.strictEqual(N.humanizeDuration('30 minutes'), '30 minutes')
+  assert.strictEqual(N.humanizeDuration(null), null)
+  assert.strictEqual(N.humanizeDuration(undefined), null)
+})

@@ -1,6 +1,7 @@
 const cheerio = require("cheerio");
 const express = require("express");
 const axios = require("axios");
+const cors = require("cors");
 const Fuse = require('fuse.js');
 const fs = require('fs');
 const csvParser = require('csv-parser');
@@ -13,7 +14,7 @@ const {Readable} = require("stream");
 
 const app = express();
 
-
+app.use(cors());
 app.use(express.json());
 
 
