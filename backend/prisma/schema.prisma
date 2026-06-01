@@ -1,0 +1,21 @@
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Food {
+  fdcId       Int     @id
+  description String  @db.NVarChar(500)
+  dataType    String  @db.NVarChar(50)
+  category    String? @db.NVarChar(100)
+  calories    Float?
+  protein     Float?
+  fat         Float?
+  carbs       Float?
+
+  @@index([dataType])
+}
