@@ -34,3 +34,12 @@ describe('saveRecipe', () => {
     expect(client.apiClient).toHaveBeenCalledWith('/save-recipe', { recipe })
   })
 })
+
+describe('getNutrition', () => {
+  it('calls /get-nutrition with ingredients and servings', async () => {
+    client.apiClient.mockResolvedValue({ totals: {} })
+    const { getNutrition } = await import('../recipes.js')
+    await getNutrition(['2 cups flour'], '4')
+    expect(client.apiClient).toHaveBeenCalledWith('/get-nutrition', { ingredients: ['2 cups flour'], servings: '4' })
+  })
+})

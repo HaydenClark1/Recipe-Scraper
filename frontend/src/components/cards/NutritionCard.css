@@ -3,33 +3,125 @@
   min-height: 100%;
 }
 
-.nutrition-list {
-  list-style: none;
+.nutrition-label {
   padding: 0 20px 24px;
 }
 
-.nutrition-item {
+.nutrition-label__basis {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  padding: 4px 0 8px;
+}
+
+.nutrition-label__calories {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 0;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 6px solid var(--text-primary);
   border-bottom: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.nutrition-item:last-child {
-  border-bottom: none;
-}
-
-.nutrition-name {
-  font-weight: 500;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--text-primary);
 }
 
-.nutrition-desc {
-  color: var(--text-secondary);
-  font-size: 13px;
-  text-align: right;
+.nutrition-label__calories-value {
   font-feature-settings: 'tnum';
+}
+
+.nutrition-label__macros {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nutrition-label__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+}
+
+.nutrition-label__name {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.nutrition-label__value {
+  color: var(--text-primary);
+  font-feature-settings: 'tnum';
+}
+
+.nutrition-label__whole {
+  padding: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-feature-settings: 'tnum';
+}
+
+.nutrition-label__note {
+  padding: 8px 0 0;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+/* Ingredient breakdown (debug) */
+.nutrition-breakdown {
+  margin-top: 16px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.nutrition-breakdown__toggle {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.nutrition-breakdown__toggle:hover {
+  color: var(--text-primary);
+}
+
+.nutrition-breakdown__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+}
+
+.nutrition-breakdown__table th {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.nutrition-breakdown__table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.nutrition-breakdown__basis {
+  font-size: 10px;
+  color: var(--text-secondary);
+  max-width: 160px;
+}
+
+.nutrition-breakdown__unmatched td {
+  color: var(--text-secondary);
+  font-style: italic;
 }
