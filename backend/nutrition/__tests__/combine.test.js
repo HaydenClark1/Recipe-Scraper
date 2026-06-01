@@ -1,0 +1,94 @@
+const test = require('node:test')
+const assert = require('node:assert')
+const { combineNutrition, parseServings, cleanForSearch } = require('../combine')
+
+// Fake searchFood keyed by the parsed ingredient name.
+const fake = (map) => async (name) => map[name] || null
+
+test('parseServings extracts a positive number or null', () => {
+  assert.strictEqual(parseServings('4'), 4)
+  assert.strictEqual(parseServings('8 servings'), 8)
+  assert.strictEqual(parseServings(null), null)
+  assert.strictEqual(parseServings('0'), null)
+  assert.strictEqual(parseServings('N/A'), null)
+})
+
+test('scales a mass basis by grams', async () => {
+  const searchFood = fake({
+    sugar: { food_name: 'Sugar', food_description: 'Per 100g - Calories: 400kcal | Fat: 0g | Carbs: 100g | Protein: 0g' },
+  })
+  const r = await combineNutrition(['200 g sugar'], null, { searchFood })
+  assert.strictEqual(r.totals.calories, 800)
+  assert.strictEqual(r.totals.carbs, 200)
+  assert.strictEqual(r.items[0].matched, true)
+  assert.strictEqual(r.perServing, null)
+})
+
+test('computes per-serving when servings is known', async () => {
+  const searchFood = fake({
+    rice: { food_name: 'Rice', food_description: 'Per 100g - Calories: 100kcal | Fat: 0g | Carbs: 20g | Protein: 2g' },
+  })
+  const r = await combineNutrition(['400 g rice'], '4', { searchFood })
+  assert.strictEqual(r.totals.calories, 400)
+  assert.strictEqual(r.servings, 4)
+  assert.strictEqual(r.perServing.calories, 100)
+})
+
+test('unmatched ingredient contributes zero and is flagged', async () => {
+  const r = await combineNutrition(['1 pinch unobtainium'], null, { searchFood: fake({}) })
+  assert.strictEqual(r.items[0].matched, false)
+  assert.strictEqual(r.totals.calories, 0)
+  assert.strictEqual(r.estimated, true)
+})
+
+test('cleanForSearch strips size/prep modifiers and percentages', () => {
+  assert.strictEqual(cleanForSearch('Large Whole Eggs'), 'Eggs')
+  assert.strictEqual(cleanForSearch('95% Lean Ground Chicken'), 'Ground Chicken')
+  assert.strictEqual(cleanForSearch('Fresh Basil Leaves'), 'Basil Leaves')
+  assert.strictEqual(cleanForSearch('Extra Virgin Olive Oil'), 'Olive Oil')
+  assert.strictEqual(cleanForSearch('sugar'), 'sugar')
+})
+
+test('scales a unit basis whose unit has a weight modifier (e.g. oz cooked)', async () => {
+  // FatSecret returns "Per 3 oz cooked" — basis.unit = 'oz cooked', basis.count = 3
+  // Ingredient is "16 oz chicken" → grams = 453.6
+  // Expected scale = 453.6 / toGrams(3, 'oz') = 453.6 / 85.05 ≈ 5.33 → 120 × 5.33 ≈ 640 cal
+  const searchFood = async () => ({
+    food_name: 'Ground Chicken',
+    food_description: 'Per 3 oz cooked - Calories: 120kcal | Fat: 1.50g | Carbs: 0.00g | Protein: 23.00g',
+  })
+  const r = await combineNutrition(['16 oz chicken'], null, { searchFood })
+  assert.ok(r.totals.calories > 600 && r.totals.calories < 700,
+    `Expected ~640 cal, got ${r.totals.calories}`)
+  assert.strictEqual(r.estimated, false)
+})
+
+test('paren gram weight on a count ingredient flows through to correct scaling', async () => {
+  // "2 Jalapeno (40 grams)": no unit → paren overrides, grams=40, scale=40/100=0.4 → 12 cal
+  const searchFood = async (name) => name === 'Jalapeno' ? {
+    food_name: 'Jalapeno Peppers',
+    food_description: 'Per 100g - Calories: 30kcal | Fat: 0.62g | Carbs: 5.91g | Protein: 1.35g',
+  } : null
+  const r = await combineNutrition(['2 Jalapeno (diced, (40 grams))'], null, { searchFood })
+  assert.strictEqual(r.totals.calories, 12)
+})
+
+test('paren gram weight is ignored when a volume unit is present, scaling by volume instead', async () => {
+  // "1/2 cup Panko (20 grams)": unit='cup' → paren ignored, scale = 0.5/0.5 = 1 → 100 cal
+  const searchFood = async () => ({
+    food_name: 'Panko Bread Crumbs',
+    food_description: 'Per 1/2 cup - Calories: 100kcal | Fat: 0.50g | Carbs: 19.00g | Protein: 3.00g',
+  })
+  const r = await combineNutrition(['1/2 cup Panko Bread Crumbs ((20 grams))'], null, { searchFood })
+  assert.strictEqual(r.totals.calories, 100)
+})
+
+test('sums multiple ingredients', async () => {
+  const searchFood = fake({
+    flour: { food_name: 'Flour', food_description: 'Per 100g - Calories: 100kcal | Fat: 1g | Carbs: 20g | Protein: 3g' },
+    butter: { food_name: 'Butter', food_description: 'Per 100g - Calories: 700kcal | Fat: 80g | Carbs: 0g | Protein: 1g' },
+  })
+  const r = await combineNutrition(['100 g flour', '100 g butter'], null, { searchFood })
+  assert.strictEqual(r.totals.calories, 800)
+  assert.strictEqual(r.totals.fat, 81)
+})

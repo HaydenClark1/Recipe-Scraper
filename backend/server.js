@@ -9,6 +9,8 @@ const { Parser } = require("json2csv");
 const {Readable} = require("stream");
 
 const { scrapeRecipe } = require("./scraper");
+const { combineNutrition } = require("./nutrition/combine");
+const { searchFood } = require("./nutrition/fatsecretClient");
 
 const app = express();
 
@@ -146,53 +148,19 @@ app.post('/save-recipe', async (req,res) => {
 
 })
 
-app.post('/get-nutrition', async (req,res) => {
-  const {ingredients} = req.body
+app.post('/get-nutrition', async (req, res) => {
+  const { ingredients, servings } = req.body;
+  if (!Array.isArray(ingredients)) {
+    return res.status(400).json({ error: "ingredients array is required" });
+  }
   try {
-    const results = await Promise.all(
-      ingredients.map(async (ingredient) => {
-        return await fatSecretApi(ingredient);
-      })
-    );
-
-    res.status(200).json({ nutrition: results });
+    const result = await combineNutrition(ingredients, servings, { searchFood });
+    return res.status(200).json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to fetch nutrition info' });
+    console.error("Nutrition combine failed:", err);
+    return res.status(500).json({ error: "Failed to fetch nutrition info" });
   }
 });
-
-const fatSecretApi = async (ingredient) => {
-  const secrets =  require('./api-keys.json');
-  const accessToken = secrets.access_token;
-
-  const response = await fetch("https://platform.fatsecret.com/rest/server.api",{
-    method: "POST",
-    headers: {
-      'Authorization' : `Bearer ${accessToken}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body : new URLSearchParams({
-      method: 'foods.search',
-      search_expression: ingredient,
-      format: 'json',
-    })
-  })
-  const data = await response.json()
-  
-  const foodLists = data?.foods.food;
-
-  if(Array.isArray(foodLists) && foodLists.length > 0){
-    const firstItem = foodLists[0];
-    console.log(firstItem)
-    return {
-      name: firstItem.food_name,
-      description: firstItem.food_description,
-      brand: firstItem.brand_name || "Generic"
-    }
-
-  }
-}
 app.get("/", (req, res) => {
   res.send("Backend is up!");
 });
