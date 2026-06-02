@@ -76,4 +76,17 @@ async function loadFoods(prisma) {
   return prisma.food.findMany()
 }
 
-module.exports = { formatDescription, buildIndex, makeUsdaSearch, loadFoods }
+// Multi-result variant for the "replace match" picker: top-N fuzzy candidates.
+function makeUsdaSearchMany(index, foods, limit = 15) {
+  const toResult = (food) => ({
+    food_name: food.description,
+    food_description: formatDescription(food),
+    fdcId: food.fdcId,
+  })
+  return async function searchFoods(name) {
+    if (!name || name.trim().length < 2) return []
+    return index.search(name).slice(0, limit).map((h) => toResult(h.item))
+  }
+}
+
+module.exports = { formatDescription, buildIndex, makeUsdaSearch, makeUsdaSearchMany, loadFoods }

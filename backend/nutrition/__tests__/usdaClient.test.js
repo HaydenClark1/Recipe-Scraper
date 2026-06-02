@@ -78,3 +78,23 @@ test('makeUsdaSearch returns null for empty or too-short name', async () => {
   assert.strictEqual(await search(''), null)
   assert.strictEqual(await search('a'), null)
 })
+
+const { makeUsdaSearchMany } = require('../usdaClient')
+
+test('makeUsdaSearchMany returns up to N candidates in result shape', async () => {
+  const foods = [
+    { fdcId: 1, description: 'Chicken breast, grilled', calories: 165, fat: 3, carbs: 0, protein: 31 },
+    { fdcId: 2, description: 'Chicken breast, roasted', calories: 187, fat: 7, carbs: 0, protein: 29 },
+    { fdcId: 3, description: 'Chicken, broth', calories: 7, fat: 0, carbs: 0, protein: 1 },
+  ]
+  const searchFoods = makeUsdaSearchMany(buildIndex(foods), foods, 2)
+  const out = await searchFoods('chicken breast')
+  assert.ok(out.length <= 2 && out.length >= 1)
+  assert.ok('food_name' in out[0] && 'food_description' in out[0])
+  assert.strictEqual(out[0].fdcId, foods.find((f) => f.description === out[0].food_name).fdcId)
+})
+
+test('makeUsdaSearchMany returns [] for short queries', async () => {
+  const searchFoods = makeUsdaSearchMany(buildIndex([]), [], 5)
+  assert.deepStrictEqual(await searchFoods('a'), [])
+})
