@@ -14,6 +14,10 @@ const { searchFood: fatsecretSearch } = require("./nutrition/fatsecretClient");
 const { loadFoods, buildIndex, makeUsdaSearch } = require("./nutrition/usdaClient");
 const { makeFoodResolver } = require("./nutrition/foodResolver");
 const { PrismaClient } = require("@prisma/client");
+const { createAuthRouter } = require("./auth/authRoutes");
+const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
+const { makeAuthMiddleware } = require("./auth/authMiddleware");
+const { verifyToken } = require("./auth/tokens");
 
 const app = express();
 
@@ -36,6 +40,9 @@ async function initNutrition() {
   }
 }
 
+
+app.use("/auth", createAuthRouter(prisma));
+app.use("/saved-recipes", createSavedRecipeRouter(prisma, makeAuthMiddleware(verifyToken)));
 
 // Read Recipies from Excel File and store
 let jsonData = [];
