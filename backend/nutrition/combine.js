@@ -37,16 +37,36 @@ function round(n, dp) {
   return Math.round(n * f) / f
 }
 
-async function combineNutrition(ingredients, servings, { searchFood }) {
+async function combineNutrition(ingredients, servings, { searchFood, overrides = [] }) {
   const items = []
   const totals = { calories: 0, fat: 0, carbs: 0, protein: 0 }
   let estimated = false
 
-  for (const line of ingredients || []) {
-    const { quantity, unit, name } = parseIngredient(line)
+  const lines = ingredients || []
+
+  // index -> { replace?, amount?, exclude? }
+  const ovByIndex = new Map()
+  for (const o of overrides || []) {
+    if (!ovByIndex.has(o.index)) ovByIndex.set(o.index, {})
+    ovByIndex.get(o.index)[o.type] = o
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const ov = ovByIndex.get(i) || {}
+    let { quantity, unit, name } = parseIngredient(lines[i])
+    if (ov.amount) { quantity = ov.amount.quantity; unit = ov.amount.unit }
+
+    if (ov.exclude) {
+      items.push({ name, matched: false, excluded: true, overridden: true, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      continue
+    }
 
     let match = null
-    try { match = await searchFood(cleanForSearch(name)) } catch { match = null }
+    if (ov.replace) {
+      match = { food_name: ov.replace.foodName, food_description: ov.replace.foodDescription }
+    } else {
+      try { match = await searchFood(cleanForSearch(name)) } catch { match = null }
+    }
     const desc = match && parseFoodDescription(match.food_description)
 
     if (!desc) {
@@ -87,6 +107,8 @@ async function combineNutrition(ingredients, servings, { searchFood }) {
     const item = {
       name,
       matched: true,
+      excluded: false,
+      overridden: !!(ov.replace || ov.amount),
       matchedName: match.food_name || null,
       matchedBasis: match.food_description || null,
       scaleFactor: round(scale, 4),
