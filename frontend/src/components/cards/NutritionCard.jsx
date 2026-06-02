@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { getNutrition } from '../../api/recipes.js'
 import { Spinner } from '../ui/Spinner.jsx'
+import { EditIngredientsModal } from '../EditIngredientsModal.jsx'
 import './NutritionCard.css'
 
 const MACROS = [
@@ -54,10 +55,11 @@ function IngredientBreakdown({ items }) {
   )
 }
 
-export function NutritionCard({ recipe }) {
+export function NutritionCard({ recipe, overrides = [], actions, onEditDone }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     if (!recipe.ingredients.length) {
@@ -67,11 +69,11 @@ export function NutritionCard({ recipe }) {
     let alive = true
     setLoading(true)
     setError(false)
-    getNutrition(recipe.ingredients, recipe.servings)
+    getNutrition(recipe.ingredients, recipe.servings, overrides)
       .then((d) => { if (alive) { setData(d); setLoading(false) } })
       .catch(() => { if (alive) { setError(true); setLoading(false) } })
     return () => { alive = false }
-  }, [recipe.ingredients, recipe.servings])
+  }, [recipe.ingredients, recipe.servings, overrides])
 
   const facts = data && (data.perServing || data.totals)
   const matched = data ? data.items.filter((i) => i.matched).length : 0
@@ -111,8 +113,22 @@ export function NutritionCard({ recipe }) {
           <p className="nutrition-label__note">
             Estimated{total ? ` · ${matched}/${total} ingredients matched` : ''}
           </p>
+          {actions && recipe.ingredients.length > 0 && (
+            <button className="nutrition-edit-btn" onClick={() => setEditing(true)} aria-label="Edit ingredients">
+              Edit ingredients
+            </button>
+          )}
           <IngredientBreakdown items={data.items} />
         </div>
+      )}
+      {editing && data && (
+        <EditIngredientsModal
+          ingredients={recipe.ingredients}
+          items={data.items}
+          overrides={overrides}
+          actions={actions}
+          onClose={() => { setEditing(false); onEditDone && onEditDone() }}
+        />
       )}
     </div>
   )

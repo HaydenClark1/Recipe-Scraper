@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useRecipe } from '../context/RecipeContext.jsx'
 import { useSavedRecipes } from '../hooks/useSavedRecipes.js'
+import { useIngredientOverrides } from '../hooks/useIngredientOverrides.js'
 import { saveRecipe } from '../api/recipes.js'
+import { updateOverrides } from '../api/savedRecipes.js'
 import { RecipeCarousel } from '../components/RecipeCarousel.jsx'
 import { ImageCard } from '../components/cards/ImageCard.jsx'
 import { IngredientsCard } from '../components/cards/IngredientsCard.jsx'
@@ -23,12 +25,19 @@ export function RecipeDetailPage() {
   const savedRow = findSaved(recipe)
   const fav = !!savedRow
 
+  const { overrides, replace, setAmount, exclude, unexclude } = useIngredientOverrides(savedRow?.overrides || [])
+  const actions = { replace, setAmount, exclude, unexclude }
+
   const handleToggleFav = () => {
     if (savedRow) {
       remove(savedRow.id)
     } else {
-      add(recipe)
+      add(recipe, overrides)
     }
+  }
+
+  const handleEditDone = () => {
+    if (savedRow) updateOverrides(savedRow.id, overrides).catch(() => {})
   }
 
   const handleSaveToDb = async () => {
@@ -72,7 +81,7 @@ export function RecipeDetailPage() {
           />,
           <IngredientsCard recipe={recipe} />,
           <InstructionsCard recipe={recipe} />,
-          <NutritionCard recipe={recipe} />,
+          <NutritionCard recipe={recipe} overrides={overrides} actions={actions} onEditDone={handleEditDone} />,
         ]}
       />
     </div>

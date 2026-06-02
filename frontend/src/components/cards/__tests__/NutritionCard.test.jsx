@@ -1,6 +1,7 @@
-import { it, expect, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { NutritionCard } from '../NutritionCard.jsx'
+import * as recipesApi from '../../../api/recipes.js'
 
 vi.mock('../../../api/recipes.js', () => ({ getNutrition: vi.fn() }))
 import { getNutrition } from '../../../api/recipes.js'
@@ -42,7 +43,7 @@ it('passes servings to getNutrition', async () => {
   getNutrition.mockResolvedValue(payload)
   render(<NutritionCard recipe={recipe} />)
   await waitFor(() =>
-    expect(getNutrition).toHaveBeenCalledWith(['2 cups flour', '3 eggs'], '4'))
+    expect(getNutrition).toHaveBeenCalledWith(['2 cups flour', '3 eggs'], '4', []))
 })
 
 it('shows unavailable message on error', async () => {
@@ -55,4 +56,31 @@ it('shows unavailable message on error', async () => {
 it('shows empty message when there are no ingredients', () => {
   render(<NutritionCard recipe={{ ingredients: [], servings: null }} />)
   expect(screen.getByText('No nutrition data found.')).toBeInTheDocument()
+})
+
+describe('NutritionCard editing', () => {
+  beforeEach(() => {
+    recipesApi.getNutrition.mockReset()
+    recipesApi.getNutrition.mockResolvedValue({
+      perServing: { calories: 100, fat: 1, carbs: 1, protein: 1 },
+      totals: { calories: 200, fat: 2, carbs: 2, protein: 2 },
+      items: [{ name: '2 chicken breasts', matched: true, matchedName: 'chicken broth', calories: 14, excluded: false }],
+      servings: 2,
+    })
+  })
+
+  it('passes overrides into getNutrition', async () => {
+    const recipe = { ingredients: ['2 chicken breasts'], servings: '2' }
+    render(<NutritionCard recipe={recipe} overrides={[{ index: 0, type: 'exclude' }]} actions={{}} />)
+    await waitFor(() => expect(recipesApi.getNutrition).toHaveBeenCalledWith(recipe.ingredients, recipe.servings, [{ index: 0, type: 'exclude' }]))
+  })
+
+  it('opens the edit modal from the Edit ingredients button', async () => {
+    const recipe = { ingredients: ['2 chicken breasts'], servings: '2' }
+    const actions = { replace: vi.fn(), setAmount: vi.fn(), exclude: vi.fn(), unexclude: vi.fn() }
+    render(<NutritionCard recipe={recipe} overrides={[]} actions={actions} />)
+    await waitFor(() => screen.getByRole('button', { name: /edit ingredients/i }))
+    fireEvent.click(screen.getByRole('button', { name: /edit ingredients/i }))
+    expect(screen.getByRole('dialog', { name: /edit ingredients/i })).toBeInTheDocument()
+  })
 })
