@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "prisma:generate": "prisma generate",
+    "db:import": "node prisma/importUsda.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "axios": "^1.8.4",
+    "bcryptjs": "^3.0.3",
     "cheerio": "^1.0.0",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
@@ -26,5 +30,8 @@
     "react-native-reanimated": "^3.17.2",
     "react-native-reanimated-carousel": "^4.0.2",
     "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
   }
 }

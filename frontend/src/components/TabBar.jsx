@@ -1,4 +1,5 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext.jsx'
 import './TabBar.css'
 
 function LinkIcon() {
@@ -25,6 +26,14 @@ function BookmarkIcon() {
   )
 }
 
+function LogoutIcon() {
+  return (
+    <svg className="tab-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.8" stroke="currentColor" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+    </svg>
+  )
+}
+
 const TABS = [
   { to: '/scrape', label: 'Scrape', Icon: LinkIcon },
   { to: '/search', label: 'Search', Icon: SearchIcon },
@@ -32,6 +41,14 @@ const TABS = [
 ]
 
 export function TabBar() {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
   return (
     <nav className="tab-bar" aria-label="Main navigation">
       <div className="tab-bar__brand" aria-hidden="true">
@@ -50,6 +67,10 @@ export function TabBar() {
           <span className="tab-label">{label}</span>
         </NavLink>
       ))}
+      <button type="button" className="tab-item" onClick={handleLogout} aria-label="Log out">
+        <LogoutIcon />
+        <span className="tab-label">Logout</span>
+      </button>
     </nav>
   )
 }

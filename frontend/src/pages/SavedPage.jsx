@@ -1,11 +1,11 @@
 import { useNavigate } from 'react-router-dom'
-import { useFavorites } from '../hooks/useFavorites.js'
+import { useSavedRecipes } from '../hooks/useSavedRecipes.js'
 import { useRecipe } from '../context/RecipeContext.jsx'
 import { SearchResultItem } from '../components/ui/SearchResultItem.jsx'
 import './SavedPage.css'
 
 export function SavedPage() {
-  const { favorites } = useFavorites()
+  const { list: favorites } = useSavedRecipes()
   const { setRecipe } = useRecipe()
   const navigate = useNavigate()
 

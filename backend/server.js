@@ -10,13 +10,39 @@ const {Readable} = require("stream");
 
 const { scrapeRecipe } = require("./scraper");
 const { combineNutrition } = require("./nutrition/combine");
-const { searchFood } = require("./nutrition/fatsecretClient");
+const { searchFood: fatsecretSearch } = require("./nutrition/fatsecretClient");
+const { loadFoods, buildIndex, makeUsdaSearch } = require("./nutrition/usdaClient");
+const { makeFoodResolver } = require("./nutrition/foodResolver");
+const { PrismaClient } = require("@prisma/client");
+const { createAuthRouter } = require("./auth/authRoutes");
+const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
+const { makeAuthMiddleware } = require("./auth/authMiddleware");
+const { verifyToken } = require("./auth/tokens");
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
+const prisma = new PrismaClient();
+
+// Default: FatSecret-only until USDA index loads (or if it fails).
+let resolveFood = makeFoodResolver({ usdaSearch: async () => null, fatsecretSearch });
+
+async function initNutrition() {
+  try {
+    const foods = await loadFoods(prisma);
+    const index = buildIndex(foods);
+    resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index, foods), fatsecretSearch });
+    console.log(`USDA nutrition index loaded: ${foods.length} foods`);
+  } catch (err) {
+    console.warn("USDA index unavailable, using FatSecret-only:", err.message);
+  }
+}
+
+
+app.use("/auth", createAuthRouter(prisma));
+app.use("/saved-recipes", createSavedRecipeRouter(prisma, makeAuthMiddleware(verifyToken)));
 
 // Read Recipies from Excel File and store
 let jsonData = [];
@@ -25,6 +51,7 @@ let jsonData = [];
 (async () => {
   jsonData = await loadCSVFromGitHub();
   console.log(jsonData);
+  await initNutrition();
   const port = process.env.PORT || 7000;
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
@@ -154,7 +181,7 @@ app.post('/get-nutrition', async (req, res) => {
     return res.status(400).json({ error: "ingredients array is required" });
   }
   try {
-    const result = await combineNutrition(ingredients, servings, { searchFood });
+    const result = await combineNutrition(ingredients, servings, { searchFood: resolveFood });
     return res.status(200).json(result);
   } catch (err) {
     console.error("Nutrition combine failed:", err);

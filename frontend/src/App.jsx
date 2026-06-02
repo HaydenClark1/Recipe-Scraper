@@ -1,10 +1,14 @@
 import { createHashRouter, RouterProvider, Navigate, Outlet } from 'react-router-dom'
 import { RecipeProvider } from './context/RecipeContext.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
+import { RequireAuth } from './components/RequireAuth.jsx'
 import { TabBar } from './components/TabBar.jsx'
 import { ScrapePage } from './pages/ScrapePage.jsx'
 import { SearchPage } from './pages/SearchPage.jsx'
 import { SavedPage } from './pages/SavedPage.jsx'
 import { RecipeDetailPage } from './pages/RecipeDetailPage.jsx'
+import { LoginPage } from './pages/LoginPage.jsx'
+import { SignupPage } from './pages/SignupPage.jsx'
 import './styles/global.css'
 import './App.css'
 
@@ -21,21 +25,25 @@ function TabLayout() {
 
 const router = createHashRouter([
   { path: '/', element: <Navigate to="/scrape" replace /> },
+  { path: '/login', element: <LoginPage /> },
+  { path: '/signup', element: <SignupPage /> },
   {
-    element: <TabLayout />,
+    element: <RequireAuth><TabLayout /></RequireAuth>,
     children: [
       { path: '/scrape', element: <ScrapePage /> },
       { path: '/search', element: <SearchPage /> },
       { path: '/saved',  element: <SavedPage /> },
     ],
   },
-  { path: '/recipe', element: <RecipeDetailPage /> },
+  { path: '/recipe', element: <RequireAuth><RecipeDetailPage /></RequireAuth> },
 ])
 
 export default function App() {
   return (
-    <RecipeProvider>
-      <RouterProvider router={router} />
-    </RecipeProvider>
+    <AuthProvider>
+      <RecipeProvider>
+        <RouterProvider router={router} />
+      </RecipeProvider>
+    </AuthProvider>
   )
 }
