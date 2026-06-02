@@ -19,3 +19,26 @@ model Food {
 
   @@index([dataType])
 }
+
+model User {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique @db.NVarChar(255)
+  passwordHash String        @db.NVarChar(255)
+  createdAt    DateTime      @default(now())
+  savedRecipes SavedRecipe[]
+}
+
+model SavedRecipe {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  title        String   @db.NVarChar(500)
+  image        String?  @db.NVarChar(1000)
+  ingredients  String   @db.NVarChar(Max)
+  instructions String   @db.NVarChar(Max)
+  servings     String?  @db.NVarChar(50)
+  sourceUrl    String?  @db.NVarChar(1000)
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+}
