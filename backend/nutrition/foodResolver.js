@@ -19,11 +19,13 @@ function makeFoodResolver({ usdaSearch, fatsecretSearch }) {
 // Multi-result composition for /search-foods.
 function makeFoodsResolver({ usdaSearchMany, fatsecretSearchMany }) {
   return async function searchFoods(name) {
-    try {
-      const usda = await usdaSearchMany(name)
-      if (usda && usda.length) return usda
-    } catch {
-      // fall through
+    if (usdaSearchMany) {
+      try {
+        const usda = await usdaSearchMany(name)
+        if (usda && usda.length) return usda
+      } catch {
+        // fall through
+      }
     }
     if (!fatsecretSearchMany) return []
     try {

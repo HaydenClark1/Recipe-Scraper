@@ -83,9 +83,16 @@ function makeUsdaSearchMany(index, foods, limit = 15) {
     food_description: formatDescription(food),
     fdcId: food.fdcId,
   })
+  const hasCalories = (food) => food.calories != null && food.calories > 0
+  const isZeroCalFood = (name) => /^(salt|water|vinegar|soda water|club soda)/i.test(name)
   return async function searchFoods(name) {
     if (!name || name.trim().length < 2) return []
-    return index.search(name).slice(0, limit).map((h) => toResult(h.item))
+    const lower = name.toLowerCase().trim()
+    return index
+      .search(name)
+      .filter((h) => isZeroCalFood(lower) || hasCalories(h.item))
+      .slice(0, limit)
+      .map((h) => toResult(h.item))
   }
 }
 
