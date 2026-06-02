@@ -6,6 +6,10 @@ function serializeRecipe(recipe, userId) {
     ingredients: JSON.stringify(recipe.ingredients || []),
     instructions: JSON.stringify(recipe.instructions || []),
     servings: recipe.servings ?? null,
+    prepTime: recipe.prepTime ?? null,
+    totalTime: recipe.totalTime ?? null,
+    category: JSON.stringify(recipe.category || []),
+    cuisine: JSON.stringify(recipe.cuisine || []),
     sourceUrl: recipe.sourceUrl ?? null,
   }
 }
@@ -18,6 +22,10 @@ function deserializeRecipe(row) {
     ingredients: JSON.parse(row.ingredients),
     instructions: JSON.parse(row.instructions),
     servings: row.servings,
+    prepTime: row.prepTime,
+    totalTime: row.totalTime,
+    category: JSON.parse(row.category || '[]'),
+    cuisine: JSON.parse(row.cuisine || '[]'),
     sourceUrl: row.sourceUrl,
     createdAt: row.createdAt,
   }

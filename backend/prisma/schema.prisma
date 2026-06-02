@@ -37,6 +37,10 @@ model SavedRecipe {
   ingredients  String   @db.NVarChar(Max)
   instructions String   @db.NVarChar(Max)
   servings     String?  @db.NVarChar(50)
+  prepTime     String?  @db.NVarChar(100)
+  totalTime    String?  @db.NVarChar(100)
+  category     String?  @db.NVarChar(500)
+  cuisine      String?  @db.NVarChar(500)
   sourceUrl    String?  @db.NVarChar(1000)
   createdAt    DateTime @default(now())
 
