@@ -195,6 +195,9 @@ app.post('/get-nutrition', async (req, res) => {
   if (!Array.isArray(ingredients)) {
     return res.status(400).json({ error: "ingredients array is required" });
   }
+  if (overrides !== undefined && !Array.isArray(overrides)) {
+    return res.status(400).json({ error: "overrides must be an array" });
+  }
   try {
     const result = await combineNutrition(ingredients, servings, { searchFood: resolveFood, overrides });
     return res.status(200).json(result);
