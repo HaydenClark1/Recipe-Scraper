@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useRecipe } from '../context/RecipeContext.jsx'
-import { useFavorites } from '../hooks/useFavorites.js'
+import { useSavedRecipes } from '../hooks/useSavedRecipes.js'
 import { saveRecipe } from '../api/recipes.js'
 import { RecipeCarousel } from '../components/RecipeCarousel.jsx'
 import { ImageCard } from '../components/cards/ImageCard.jsx'
@@ -13,17 +13,22 @@ import './RecipeDetailPage.css'
 export function RecipeDetailPage() {
   const { recipe } = useRecipe()
   const navigate = useNavigate()
-  const { isFavorite, addFavorite, removeFavorite } = useFavorites()
+  const { add, remove, findSaved } = useSavedRecipes()
   const [saveDbState, setSaveDbState] = useState('idle')
 
   if (!recipe) {
     return <Navigate to="/scrape" replace />
   }
 
-  const fav = isFavorite(recipe.id)
+  const savedRow = findSaved(recipe)
+  const fav = !!savedRow
 
   const handleToggleFav = () => {
-    fav ? removeFavorite(recipe.id) : addFavorite(recipe)
+    if (savedRow) {
+      remove(savedRow.id)
+    } else {
+      add(recipe)
+    }
   }
 
   const handleSaveToDb = async () => {
