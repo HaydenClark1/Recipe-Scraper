@@ -6,8 +6,8 @@ export const scrapeRecipe = (url) =>
 export const searchRecipes = (search) =>
   apiClient('/search-recipies', { search })
 
-export const getNutrition = (ingredients, servings) =>
-  apiClient('/get-nutrition', { ingredients, servings })
+export const getNutrition = (ingredients, servings, overrides) =>
+  apiClient('/get-nutrition', { ingredients, servings, overrides })
 
 export const saveRecipe = (recipe) =>
   apiClient('/save-recipe', { recipe })
