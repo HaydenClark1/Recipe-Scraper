@@ -17,6 +17,7 @@ test('sets req.userId and calls next when token is valid', () => {
   let nextCalled = false
   mw(req, res, () => { nextCalled = true })
   assert.strictEqual(req.userId, 42)
+  assert.strictEqual(req.userEmail, 'a@b.com')
   assert.strictEqual(nextCalled, true)
 })
 
