@@ -43,10 +43,25 @@ test('unmatched ingredient contributes zero and is flagged', async () => {
 
 test('cleanForSearch strips size/prep modifiers and percentages', () => {
   assert.strictEqual(cleanForSearch('Large Whole Eggs'), 'Eggs')
-  assert.strictEqual(cleanForSearch('95% Lean Ground Chicken'), 'Ground Chicken')
-  assert.strictEqual(cleanForSearch('Fresh Basil Leaves'), 'Basil Leaves')
+  assert.strictEqual(cleanForSearch('95% Lean Ground Chicken'), 'Chicken')
+  assert.strictEqual(cleanForSearch('Fresh Basil Leaves'), 'Basil')
   assert.strictEqual(cleanForSearch('Extra Virgin Olive Oil'), 'Olive Oil')
   assert.strictEqual(cleanForSearch('sugar'), 'sugar')
+})
+
+test('cleanForSearch keeps only the first option from compound ingredients', () => {
+  assert.strictEqual(cleanForSearch('basil and/or mint leaves'), 'basil')
+  assert.strictEqual(cleanForSearch('spaghetti or bucatini pasta'), 'spaghetti')
+  assert.strictEqual(cleanForSearch('pecorino or Parmesan cheese'), 'pecorino')
+  assert.strictEqual(cleanForSearch('Salt and Pepper to taste'), 'Salt')
+})
+
+test('cleanForSearch strips prep phrases, special chars, and "to taste"', () => {
+  assert.strictEqual(cleanForSearch('Freshly ground black pepper'), 'black pepper')
+  assert.strictEqual(cleanForSearch('Zest of 1 lemon'), 'lemon')
+  assert.strictEqual(cleanForSearch('freshly cracked black pepper'), 'black pepper')
+  assert.strictEqual(cleanForSearch('whole garlic bulb **'), 'garlic')
+  assert.strictEqual(cleanForSearch('Salt and Pepper to taste'), 'Salt')
 })
 
 test('scales a unit basis whose unit has a weight modifier (e.g. oz cooked)', async () => {

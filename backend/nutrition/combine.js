@@ -2,14 +2,23 @@ const { parseIngredient } = require('./parseIngredient')
 const { toGrams } = require('./units')
 const { parseFoodDescription } = require('./parseFoodDescription')
 
-// Strip size/prep modifiers and percentages before sending to FatSecret search,
-// so "Large Whole Eggs" → "Eggs" and "95% Lean Ground Chicken" → "Ground Chicken".
-const PREP_STRIP_RE = /\b(extra large|extra virgin|xl|large|medium|small|fresh|dried|whole|organic|baby|lean|virgin|boneless|skinless)\b/gi
+// Strip size/prep modifiers and percentages before sending to food search.
+const PREP_STRIP_RE = /\b(extra large|extra virgin|xl|large|medium|small|fresh|freshly|dried|whole|organic|baby|lean|virgin|boneless|skinless|grated|ground|chopped|minced|diced|sliced|crushed|cracked|cold|warm|hot|cooked|raw|unsalted|salted|softened|melted|shredded|bulb|bulbs|leaves|leaf|sprig|sprigs|stalk|stalks|cloves|breast|breasts|thigh|thighs|fillet|fillets)\b/gi
 const PCT_STRIP_RE = /\b\d+%\s*/g
+const PHRASE_STRIP_RE = /\b(zest of \d+|zest of a|of \d+|to taste)\b/gi
+const SPECIAL_CHARS_RE = /[*#@!?]+/g
 
 function cleanForSearch(name) {
-  return name
+  // Strip special chars like ** that appear in recipe ingredient lists
+  let s = name.replace(SPECIAL_CHARS_RE, ' ')
+
+  // For compound ingredients split on "and", "or", "and/or", "/" — keep first option only.
+  // "Salt and Pepper to taste" → "Salt", "basil and/or mint" → "basil"
+  s = s.split(/\s+(?:and\/or|and|or|\/)\s+/i)[0].trim()
+
+  return s
     .replace(PCT_STRIP_RE, '')
+    .replace(PHRASE_STRIP_RE, '')
     .replace(PREP_STRIP_RE, '')
     .replace(/\s+/g, ' ')
     .trim()

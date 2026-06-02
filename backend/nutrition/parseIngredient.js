@@ -36,10 +36,24 @@ function parseIngredient(raw) {
     parenWeight = { quantity: Number(parenMatch[1]), unit: parenMatch[2].toLowerCase() }
   }
 
+  // Only strip after comma when the word following it is a prep/serving note
+  // (e.g. "flour, sifted" → strip; "boneless, skinless chicken thighs" → keep)
+  const PREP_AFTER_COMMA = new Set([
+    'sifted', 'packed', 'diced', 'chopped', 'minced', 'sliced', 'peeled', 'melted',
+    'softened', 'divided', 'optional', 'thawed', 'drained', 'rinsed', 'deveined',
+    'shelled', 'pitted', 'seeded', 'trimmed', 'cubed', 'shredded', 'grated',
+    'crumbled', 'toasted', 'roasted', 'such', 'about', 'approximately', 'plus',
+  ])
+
   let work = original
   while (/\([^()]*\)/.test(work)) work = work.replace(/\([^()]*\)/g, ' ')
   const comma = work.indexOf(',')
-  if (comma !== -1) work = work.slice(0, comma)
+  if (comma !== -1) {
+    const firstWordAfterComma = work.slice(comma + 1).trim().split(/\s+/)[0].toLowerCase()
+    if (PREP_AFTER_COMMA.has(firstWordAfterComma)) {
+      work = work.slice(0, comma)
+    }
+  }
   work = work.replace(/\s+/g, ' ').trim()
 
   let quantity = null

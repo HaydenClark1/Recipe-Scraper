@@ -58,3 +58,13 @@ test('non-weight parentheticals like (sifted) are stripped and ignored', () => {
   assert.strictEqual(r.unit, 'cup')
   assert.strictEqual(r.name, 'flour')
 })
+
+test('comma followed by prep word strips correctly', () => {
+  assert.strictEqual(parseIngredient('2 carrots, diced').name, 'carrots')
+  assert.strictEqual(parseIngredient('1 cup flour, sifted').name, 'flour')
+})
+
+test('comma followed by adjective (not prep word) keeps full name', () => {
+  const r = parseIngredient('4 boneless, skinless chicken thighs')
+  assert.strictEqual(r.name, 'boneless, skinless chicken thighs')
+})

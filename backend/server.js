@@ -29,7 +29,7 @@ async function initNutrition() {
   try {
     const foods = await loadFoods(prisma);
     const index = buildIndex(foods);
-    resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index), fatsecretSearch });
+    resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index, foods), fatsecretSearch });
     console.log(`USDA nutrition index loaded: ${foods.length} foods`);
   } catch (err) {
     console.warn("USDA index unavailable, using FatSecret-only:", err.message);
