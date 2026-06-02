@@ -71,7 +71,7 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
 
     if (!desc) {
       estimated = true
-      items.push({ name, matched: false, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      items.push({ name, matched: false, excluded: false, overridden: !!(ov.replace || ov.amount), grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
       continue
     }
 
