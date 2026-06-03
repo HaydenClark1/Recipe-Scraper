@@ -1,0 +1,10 @@
+1) Redux, caching, and rate limiting for API calls
+2) Make edit ingredients prettier and not cover full screen, should show what was matched to and what unit used
+3) https://barefootcontessa.com/recipes/creamy-chicken-thighs-with-lemon-and-thyme, Need to be able to 
+   scrape websites where everything isn't formatted right
+4) Searching should show multiple options. Should also give user option to search the web (Fatsecret)
+5) Look for security risks and fix
+6) Make bottom tabs clickable
+7) If ingredient doesn't have amount that is calculatable EX) 1 chicken breast ask user to specify
+8) Should be able to search saved recipies
+9) Need to get DB up in AWS or something cheap
