@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert')
 const {
   serializeRecipe, deserializeRecipe,
-  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler,
+  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler, makeSearchHandler,
 } = require('../savedRecipeHandlers')
 
 function mockRes() {
@@ -157,4 +157,37 @@ test('update 404 when recipe not owned', async () => {
   const res = mockRes()
   await makeUpdateHandler(prisma)({ userId: 9, params: { id: '5' }, body: { recipe: { title: 'X' } } }, res)
   assert.strictEqual(res.statusCode, 404)
+})
+
+const sampleRows = [
+  { id: 1, title: 'Chicken Soup', image: null, ingredients: '["2 chicken breasts","salt"]', instructions: '["cook"]', servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]', sourceUrl: null, createdAt: 't' },
+  { id: 2, title: 'Veggie Stir Fry', image: null, ingredients: '["broccoli","soy sauce"]', instructions: '["fry"]', servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]', sourceUrl: null, createdAt: 't' },
+]
+
+function searchPrisma(rows) {
+  return { savedRecipe: { findMany: async ({ where }) => {
+    assert.strictEqual(where.userId, 9)
+    return rows
+  } } }
+}
+
+test('search matches on title', async () => {
+  const res = mockRes()
+  await makeSearchHandler(searchPrisma(sampleRows))({ userId: 9, query: { q: 'chicken' } }, res)
+  assert.strictEqual(res.statusCode, 200)
+  assert.strictEqual(res.body.recipes.length, 1)
+  assert.strictEqual(res.body.recipes[0].id, 1)
+})
+
+test('search matches on ingredients', async () => {
+  const res = mockRes()
+  await makeSearchHandler(searchPrisma(sampleRows))({ userId: 9, query: { q: 'broccoli' } }, res)
+  assert.strictEqual(res.body.recipes.length, 1)
+  assert.strictEqual(res.body.recipes[0].id, 2)
+})
+
+test('empty query returns all of the user\'s recipes', async () => {
+  const res = mockRes()
+  await makeSearchHandler(searchPrisma(sampleRows))({ userId: 9, query: {} }, res)
+  assert.strictEqual(res.body.recipes.length, 2)
 })
