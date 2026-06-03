@@ -107,3 +107,73 @@ test('sums multiple ingredients', async () => {
   assert.strictEqual(r.totals.calories, 800)
   assert.strictEqual(r.totals.fat, 81)
 })
+
+test('exclude override zeroes a line and flags it', async () => {
+  const searchFood = async () => ({ food_name: 'X', food_description: 'Per 100g - Calories: 100kcal | Fat: 1g | Carbs: 1g | Protein: 1g' })
+  const overrides = [{ index: 0, type: 'exclude' }]
+  const { items, totals } = await combineNutrition(['1 g salt'], null, { searchFood, overrides })
+  assert.strictEqual(items[0].excluded, true)
+  assert.strictEqual(items[0].calories, 0)
+  assert.strictEqual(totals.calories, 0)
+})
+
+test('replace override uses the given food instead of searching', async () => {
+  let searched = false
+  const searchFood = async () => { searched = true; return null }
+  const overrides = [{ index: 0, type: 'replace', foodName: 'Chicken', foodDescription: 'Per 100g - Calories: 200kcal | Fat: 5g | Carbs: 0g | Protein: 30g' }]
+  const { items } = await combineNutrition(['100 g chicken'], null, { searchFood, overrides })
+  assert.strictEqual(searched, false)
+  assert.strictEqual(items[0].overridden, true)
+  assert.strictEqual(items[0].matchedName, 'Chicken')
+  assert.strictEqual(items[0].calories, 200)
+})
+
+test('amount override changes the scaling quantity', async () => {
+  const searchFood = async () => ({ food_name: 'Garlic', food_description: 'Per 100g - Calories: 100kcal | Fat: 0g | Carbs: 20g | Protein: 5g' })
+  const overrides = [{ index: 0, type: 'amount', quantity: 200, unit: 'g' }]
+  const { items } = await combineNutrition(['1 g garlic'], null, { searchFood, overrides })
+  assert.strictEqual(items[0].calories, 200) // 200g of a per-100g food
+})
+
+test('out-of-range override index is ignored', async () => {
+  const searchFood = async () => null
+  const overrides = [{ index: 5, type: 'exclude' }]
+  const { items } = await combineNutrition(['1 g salt'], null, { searchFood, overrides })
+  assert.strictEqual(items.length, 1)
+})
+
+test('manual override uses final unscaled values and skips searching', async () => {
+  let searched = false
+  const searchFood = async () => { searched = true; return null }
+  const overrides = [{ index: 0, type: 'manual', calories: 250, fat: 10, carbs: 5, protein: 30 }]
+  const { items, totals } = await combineNutrition(['2 chicken breasts'], null, { searchFood, overrides })
+  assert.strictEqual(searched, false)
+  assert.strictEqual(items[0].overridden, true)
+  assert.strictEqual(items[0].matched, true)
+  assert.strictEqual(items[0].calories, 250)
+  assert.strictEqual(items[0].protein, 30)
+  assert.strictEqual(totals.calories, 250)
+  assert.strictEqual(totals.protein, 30)
+})
+
+test('manual override treats missing macros as 0', async () => {
+  const searchFood = async () => null
+  const overrides = [{ index: 0, type: 'manual', calories: 100 }]
+  const { items } = await combineNutrition(['1 thing'], null, { searchFood, overrides })
+  assert.strictEqual(items[0].calories, 100)
+  assert.strictEqual(items[0].fat, 0)
+  assert.strictEqual(items[0].carbs, 0)
+  assert.strictEqual(items[0].protein, 0)
+})
+
+test('exclude takes precedence over manual', async () => {
+  const searchFood = async () => null
+  const overrides = [
+    { index: 0, type: 'manual', calories: 999 },
+    { index: 0, type: 'exclude' },
+  ]
+  const { items, totals } = await combineNutrition(['1 thing'], null, { searchFood, overrides })
+  assert.strictEqual(items[0].excluded, true)
+  assert.strictEqual(items[0].calories, 0)
+  assert.strictEqual(totals.calories, 0)
+})

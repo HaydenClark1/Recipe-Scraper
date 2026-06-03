@@ -4,7 +4,7 @@ import { buildSegments } from '../../lib/highlightInstruction.js'
 import { IngredientPopover } from '../IngredientPopover.jsx'
 import './InstructionsCard.css'
 
-export function InstructionsCard({ recipe }) {
+export function InstructionsCard({ recipe, onEdit }) {
   const parsed = useMemo(
     () => recipe.ingredients.map(parseIngredientLine),
     [recipe.ingredients]
@@ -51,6 +51,11 @@ export function InstructionsCard({ recipe }) {
           text={popover.text}
           onClose={() => setPopover(null)}
         />
+      )}
+      {onEdit && (
+        <button className="card-edit-btn" onClick={onEdit} aria-label="Edit instructions">
+          Edit instructions
+        </button>
       )}
     </div>
   )

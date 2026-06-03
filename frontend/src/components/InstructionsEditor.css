@@ -1,0 +1,14 @@
+.ins-editor { position: fixed; inset: 0; z-index: 1000; display: flex; flex-direction: column; background: #fff; touch-action: manipulation; }
+.ins-editor__header, .ins-editor__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 16px; border-bottom: 1px solid #FCA5A5; font-weight: 600; color: #450A0A; background: #FFF7F7; }
+.ins-editor__footer { border-top: 1px solid #FCA5A5; border-bottom: none; }
+.ins-editor__list { flex: 1; overflow-y: auto; overscroll-behavior: contain; margin: 0; padding: 0; list-style: none; }
+.ins-row { display: flex; align-items: flex-start; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #f2f2f2; }
+.ins-row__num { min-width: 20px; padding-top: 12px; color: #888; font-size: 14px; }
+.ins-row__text { flex: 1; min-height: 44px; font-size: 16px; padding: 8px 12px; border: 1px solid #FCA5A5; border-radius: 10px; color: #450A0A; resize: vertical; }
+.ins-handle { min-height: 44px; min-width: 44px; border: 1px solid #FCA5A5; border-radius: 10px; background: #FFF7F7; color: #DC2626; cursor: grab; touch-action: none; }
+.ins-btn { min-height: 44px; min-width: 44px; padding: 8px 14px; border: 1px solid #FCA5A5; border-radius: 10px; background: #FFF7F7; color: #DC2626; font-size: 14px; cursor: pointer; transition: background-color 0.2s; }
+.ins-btn:hover { background: #FEE2E2; }
+.ins-btn:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }
+.ins-btn--danger { color: #991B1B; }
+.ins-btn--add { flex: 1; }
+.ins-btn--done { flex: 1; background: #DC2626; color: #fff; border: none; font-weight: 600; }

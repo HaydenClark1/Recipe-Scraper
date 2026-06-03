@@ -11,8 +11,8 @@ const {Readable} = require("stream");
 const { scrapeRecipe } = require("./scraper");
 const { combineNutrition } = require("./nutrition/combine");
 const { searchFood: fatsecretSearch } = require("./nutrition/fatsecretClient");
-const { loadFoods, buildIndex, makeUsdaSearch } = require("./nutrition/usdaClient");
-const { makeFoodResolver } = require("./nutrition/foodResolver");
+const { loadFoods, buildIndex, makeUsdaSearch, makeUsdaSearchMany } = require("./nutrition/usdaClient");
+const { makeFoodResolver, makeFoodsResolver } = require("./nutrition/foodResolver");
 const { PrismaClient } = require("@prisma/client");
 const { createAuthRouter } = require("./auth/authRoutes");
 const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
@@ -28,12 +28,15 @@ const prisma = new PrismaClient();
 
 // Default: FatSecret-only until USDA index loads (or if it fails).
 let resolveFood = makeFoodResolver({ usdaSearch: async () => null, fatsecretSearch });
+const fatsecretSearchMany = async (q) => { const r = await fatsecretSearch(q); return r ? [r] : []; };
+let resolveFoods = makeFoodsResolver({ usdaSearchMany: async () => [], fatsecretSearchMany });
 
 async function initNutrition() {
   try {
     const foods = await loadFoods(prisma);
     const index = buildIndex(foods);
     resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index, foods), fatsecretSearch });
+    resolveFoods = makeFoodsResolver({ usdaSearchMany: makeUsdaSearchMany(index, foods), fatsecretSearchMany });
     console.log(`USDA nutrition index loaded: ${foods.length} foods`);
   } catch (err) {
     console.warn("USDA index unavailable, using FatSecret-only:", err.message);
@@ -50,7 +53,6 @@ let jsonData = [];
 
 (async () => {
   jsonData = await loadCSVFromGitHub();
-  console.log(jsonData);
   await initNutrition();
   const port = process.env.PORT || 7000;
   app.listen(port, () => {
@@ -175,13 +177,28 @@ app.post('/save-recipe', async (req,res) => {
 
 })
 
+app.get('/search-foods', async (req, res) => {
+  const q = (req.query.q || '').toString().trim();
+  if (q.length < 2) return res.status(400).json({ error: 'query too short' });
+  try {
+    const foods = await resolveFoods(q);
+    return res.status(200).json({ foods });
+  } catch (err) {
+    console.error('Food search failed:', err.message);
+    return res.status(500).json({ error: 'Failed to search foods' });
+  }
+});
+
 app.post('/get-nutrition', async (req, res) => {
-  const { ingredients, servings } = req.body;
+  const { ingredients, servings, overrides } = req.body;
   if (!Array.isArray(ingredients)) {
     return res.status(400).json({ error: "ingredients array is required" });
   }
+  if (overrides !== undefined && !Array.isArray(overrides)) {
+    return res.status(400).json({ error: "overrides must be an array" });
+  }
   try {
-    const result = await combineNutrition(ingredients, servings, { searchFood: resolveFood });
+    const result = await combineNutrition(ingredients, servings, { searchFood: resolveFood, overrides });
     return res.status(200).json(result);
   } catch (err) {
     console.error("Nutrition combine failed:", err);

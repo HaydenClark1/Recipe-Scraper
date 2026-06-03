@@ -70,6 +70,27 @@
   color: var(--text-secondary);
 }
 
+/* Edit ingredients button */
+.nutrition-edit-btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 12px 0;
+  padding: 10px 16px;
+  background: #FFF7F7;
+  border: 1.5px solid #DC2626;
+  border-radius: 8px;
+  color: #DC2626;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.nutrition-edit-btn:active {
+  background: #FEE2E2;
+}
+
 /* Ingredient breakdown (debug) */
 .nutrition-breakdown {
   margin-top: 16px;

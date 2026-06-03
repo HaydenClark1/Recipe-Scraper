@@ -1,4 +1,5 @@
 const Fuse = require('fuse.js')
+const { scoreCandidate, MIN_SCORE } = require('./scoreFood')
 
 // USDA macros are stored per 100g; emit the same string shape FatSecret returns
 // so parseFoodDescription can read it unchanged.
@@ -10,64 +11,86 @@ function formatDescription(food) {
 function buildIndex(foods) {
   return new Fuse(foods, {
     keys: ['description'],
-    threshold: 0.2,        // tighter — reduces false matches like "salt" → "Butter, salted"
+    threshold: 0.2,
     ignoreLocation: true,
-    minMatchCharLength: 3, // prevents single/double char queries matching random entries
+    minMatchCharLength: 3,
+    includeScore: true,
   })
 }
 
-// makeUsdaSearch(index, foods) — four-tier lookup to handle USDA naming conventions.
+const POOL_LIMIT = 25
+
+// Build a bounded candidate shortlist:
+//   Fuse top-N ∪ exact/prefix primary matches ∪ all-words-in-description matches
+// Returns Array of { item, fuseScore } so callers can use fuseScore as a tiebreaker.
+function buildPool(index, foods, name) {
+  const lower = name.toLowerCase().trim()
+  const words = lower.split(/\s+/).filter((w) => w.length >= 2)
+  const fuseHits = index.search(name).slice(0, POOL_LIMIT)
+  const seen = new Set(fuseHits.map((h) => h.item.fdcId))
+
+  const pool = fuseHits.map((h) => ({ item: h.item, fuseScore: h.score || 0 }))
+
+  // Exact/prefix primary-segment matches (force-included regardless of Fuse rank)
+  for (const f of foods) {
+    if (seen.has(f.fdcId)) continue
+    const primary = f.description.split(',')[0].toLowerCase()
+    if (
+      primary === lower ||
+      primary.startsWith(lower + ' ') ||
+      primary.startsWith(lower + ',')
+    ) {
+      pool.push({ item: f, fuseScore: 1 })
+      seen.add(f.fdcId)
+    }
+  }
+
+  // Word-set matches: every query word appears somewhere in the description
+  // (handles word-order inversions like "olive oil" → "Oil, olive, salad or cooking")
+  if (words.length >= 2) {
+    for (const f of foods) {
+      if (seen.has(f.fdcId)) continue
+      const desc = f.description.toLowerCase()
+      if (words.every((w) => desc.includes(w))) {
+        pool.push({ item: f, fuseScore: 1 })
+        seen.add(f.fdcId)
+      }
+    }
+  }
+
+  return pool
+}
+
+// makeUsdaSearch(index, foods) — score all candidates, return the best fit.
 function makeUsdaSearch(index, foods) {
   const toResult = (food) => ({
     food_name: food.description,
     food_description: formatDescription(food),
   })
 
-  // Skip entries with 0/null calories unless the search term itself is a zero-cal food
   const hasCalories = (food) => food.calories != null && food.calories > 0
   const isZeroCalFood = (name) => /^(salt|water|vinegar|soda water|club soda)/i.test(name)
 
   return async function searchFood(name) {
     if (!name || name.trim().length < 2) return null
     const lower = name.toLowerCase().trim()
-    const words = lower.split(/\s+/).filter((w) => w.length >= 3)
 
-    // Tier 1: exact primary name match (case-insensitive)
-    const exact = foods.find((f) => f.description.split(',')[0].toLowerCase() === lower)
-    if (exact) return toResult(exact)
+    const pool = buildPool(index, foods, name)
+    const filtered = pool.filter(({ item }) => isZeroCalFood(lower) || hasCalories(item))
+    if (!filtered.length) return null
 
-    // Tier 2: primary name starts with the full search term — prefer shortest match
-    // (avoids "Butter replacement" ranking above "Butter, with salt" for "butter")
-    const prefixCandidates = foods.filter((f) => {
-      const primary = f.description.split(',')[0].toLowerCase()
-      return primary.startsWith(lower + ' ') || primary.startsWith(lower + ',')
-    })
-    prefixCandidates.sort((a, b) =>
-      a.description.split(',')[0].length - b.description.split(',')[0].length
-    )
-    const prefixMatch = prefixCandidates.find((f) => isZeroCalFood(lower) || hasCalories(f))
-    if (prefixMatch) return toResult(prefixMatch)
-
-    // Tier 3: the food's first segment (its actual name) contains a search word AND every
-    // search word appears somewhere in the description. Handles word-order inversions like
-    // "olive oil" → "Oil, olive, salad or cooking" while rejecting "Mayonnaise, ..., with
-    // olive oil" (first segment "mayonnaise" contains neither "olive" nor "oil").
-    if (words.length >= 2) {
-      const wordMatch = foods.find((f) => {
-        if (!isZeroCalFood(lower) && !hasCalories(f)) return false
-        const desc = f.description.toLowerCase()
-        const firstSeg = desc.split(',')[0]
-        const firstSegHasWord = words.some((w) => firstSeg.includes(w))
-        return firstSegHasWord && words.every((w) => desc.includes(w))
-      })
-      if (wordMatch) return toResult(wordMatch)
+    // Score all candidates; use fuseScore as tiebreaker (lower fuse score = better match)
+    let best = null
+    let bestScore = -Infinity
+    for (const { item, fuseScore } of filtered) {
+      const s = scoreCandidate(lower, item) - fuseScore * 0.5
+      if (s > bestScore) {
+        bestScore = s
+        best = item
+      }
     }
 
-    // Tier 4: Fuse fuzzy fallback — skip 0-cal results unless zero-cal food
-    const hits = index.search(name)
-    const hit = hits.find((h) => isZeroCalFood(lower) || hasCalories(h.item))
-    if (hit) return toResult(hit.item)
-
+    if (best && bestScore >= MIN_SCORE) return toResult(best)
     return null
   }
 }
@@ -76,4 +99,33 @@ async function loadFoods(prisma) {
   return prisma.food.findMany()
 }
 
-module.exports = { formatDescription, buildIndex, makeUsdaSearch, loadFoods }
+// Multi-result variant for the "replace match" picker: top-N scored candidates.
+function makeUsdaSearchMany(index, foods, limit = 15) {
+  const toResult = (food) => ({
+    food_name: food.description,
+    food_description: formatDescription(food),
+    fdcId: food.fdcId,
+  })
+  const hasCalories = (food) => food.calories != null && food.calories > 0
+  const isZeroCalFood = (name) => /^(salt|water|vinegar|soda water|club soda)/i.test(name)
+
+  return async function searchFoods(name) {
+    if (!name || name.trim().length < 2) return []
+    const lower = name.toLowerCase().trim()
+
+    const pool = buildPool(index, foods, name)
+    const filtered = pool.filter(({ item }) => isZeroCalFood(lower) || hasCalories(item))
+
+    return filtered
+      .map(({ item, fuseScore }) => ({
+        item,
+        score: scoreCandidate(lower, item) - fuseScore * 0.5,
+      }))
+      .filter(({ score }) => score >= MIN_SCORE)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(({ item }) => toResult(item))
+  }
+}
+
+module.exports = { formatDescription, buildIndex, makeUsdaSearch, makeUsdaSearchMany, loadFoods }

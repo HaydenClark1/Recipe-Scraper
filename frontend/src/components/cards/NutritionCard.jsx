@@ -54,7 +54,7 @@ function IngredientBreakdown({ items }) {
   )
 }
 
-export function NutritionCard({ recipe }) {
+export function NutritionCard({ recipe, overrides = [], onEdit }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -67,11 +67,11 @@ export function NutritionCard({ recipe }) {
     let alive = true
     setLoading(true)
     setError(false)
-    getNutrition(recipe.ingredients, recipe.servings)
+    getNutrition(recipe.ingredients, recipe.servings, overrides)
       .then((d) => { if (alive) { setData(d); setLoading(false) } })
       .catch(() => { if (alive) { setError(true); setLoading(false) } })
     return () => { alive = false }
-  }, [recipe.ingredients, recipe.servings])
+  }, [recipe.ingredients, recipe.servings, overrides])
 
   const facts = data && (data.perServing || data.totals)
   const matched = data ? data.items.filter((i) => i.matched).length : 0
@@ -111,6 +111,11 @@ export function NutritionCard({ recipe }) {
           <p className="nutrition-label__note">
             Estimated{total ? ` · ${matched}/${total} ingredients matched` : ''}
           </p>
+          {onEdit && recipe.ingredients.length > 0 && (
+            <button className="nutrition-edit-btn" onClick={onEdit} aria-label="Edit ingredients">
+              Edit ingredients & nutrition
+            </button>
+          )}
           <IngredientBreakdown items={data.items} />
         </div>
       )}

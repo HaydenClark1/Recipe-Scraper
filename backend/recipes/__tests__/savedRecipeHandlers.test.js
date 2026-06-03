@@ -2,7 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert')
 const {
   serializeRecipe, deserializeRecipe,
-  makeListHandler, makeCreateHandler, makeDeleteHandler,
+  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler,
 } = require('../savedRecipeHandlers')
 
 function mockRes() {
@@ -76,5 +76,85 @@ test('delete 404 when nothing was deleted (not owned)', async () => {
   const prisma = { savedRecipe: { deleteMany: async () => ({ count: 0 }) } }
   const res = mockRes()
   await makeDeleteHandler(prisma)({ userId: 9, params: { id: '5' } }, res)
+  assert.strictEqual(res.statusCode, 404)
+})
+
+test('serializeRecipe stores ingredientsData and derives the flat ingredients column', () => {
+  const data = serializeRecipe({
+    title: 'T',
+    ingredientsData: [
+      { id: 'a', text: '2 eggs', nutrition: { manual: { calories: 140 } } },
+      { id: 'b', text: 'salt', nutrition: { excluded: true } },
+    ],
+    instructions: ['mix', 'cook'],
+  }, 7)
+  assert.deepStrictEqual(JSON.parse(data.ingredients), ['2 eggs', 'salt'])
+  assert.deepStrictEqual(JSON.parse(data.instructions), ['mix', 'cook'])
+  const rich = JSON.parse(data.ingredientsData)
+  assert.strictEqual(rich[0].text, '2 eggs')
+  assert.deepStrictEqual(rich[0].nutrition, { manual: { calories: 140 } })
+  assert.strictEqual(data.userId, 7)
+})
+
+test('serializeRecipe accepts plain string ingredients (wraps them)', () => {
+  const data = serializeRecipe({ title: 'T', ingredients: ['a', 'b'], instructions: [] }, 1)
+  const rich = JSON.parse(data.ingredientsData)
+  assert.strictEqual(rich.length, 2)
+  assert.strictEqual(rich[0].text, 'a')
+  assert.strictEqual(rich[0].nutrition, null)
+  assert.ok(typeof rich[0].id === 'string' && rich[0].id.length > 0)
+})
+
+test('deserializeRecipe parses ingredientsData into rich + flat ingredients', () => {
+  const r = deserializeRecipe({
+    id: 1, title: 'T', image: null,
+    ingredients: '["2 eggs","salt"]',
+    instructions: '["mix"]',
+    servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
+    sourceUrl: null, createdAt: 't',
+    ingredientsData: '[{"id":"a","text":"2 eggs","nutrition":{"manual":{"calories":140}}},{"id":"b","text":"salt","nutrition":{"excluded":true}}]',
+  })
+  assert.deepStrictEqual(r.ingredients, ['2 eggs', 'salt'])
+  assert.strictEqual(r.ingredientsData[0].id, 'a')
+  assert.deepStrictEqual(r.ingredientsData[1].nutrition, { excluded: true })
+  assert.deepStrictEqual(r.instructions, ['mix'])
+})
+
+test('deserializeRecipe falls back to plain ingredients when ingredientsData is null (legacy)', () => {
+  const r = deserializeRecipe({
+    id: 1, title: 'T', image: null,
+    ingredients: '["2 eggs","salt"]',
+    instructions: '["mix"]',
+    servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
+    sourceUrl: null, createdAt: 't',
+    ingredientsData: null,
+  })
+  assert.deepStrictEqual(r.ingredients, ['2 eggs', 'salt'])
+  assert.strictEqual(r.ingredientsData.length, 2)
+  assert.strictEqual(r.ingredientsData[0].text, '2 eggs')
+  assert.strictEqual(r.ingredientsData[0].nutrition, null)
+})
+
+test('update replaces editable fields, scoped to the owner', async () => {
+  let updateArg = null
+  const prisma = {
+    savedRecipe: {
+      findFirst: async ({ where }) => (where.id === 5 && where.userId === 9 ? { id: 5 } : null),
+      update: async (arg) => { updateArg = arg; return { id: 5, ...arg.data, ingredients: arg.data.ingredients, instructions: arg.data.instructions } },
+    },
+  }
+  const res = mockRes()
+  const req = { userId: 9, params: { id: '5' }, body: { recipe: { title: 'New', ingredientsData: [{ id: 'a', text: 'x', nutrition: null }], instructions: ['s1'] } } }
+  await makeUpdateHandler(prisma)(req, res)
+  assert.strictEqual(res.statusCode, 200)
+  assert.strictEqual(updateArg.where.id, 5)
+  assert.deepStrictEqual(JSON.parse(updateArg.data.ingredients), ['x'])
+  assert.strictEqual(JSON.parse(updateArg.data.ingredientsData)[0].text, 'x')
+})
+
+test('update 404 when recipe not owned', async () => {
+  const prisma = { savedRecipe: { findFirst: async () => null } }
+  const res = mockRes()
+  await makeUpdateHandler(prisma)({ userId: 9, params: { id: '5' }, body: { recipe: { title: 'X' } } }, res)
   assert.strictEqual(res.statusCode, 404)
 })

@@ -40,6 +40,15 @@ describe('getNutrition', () => {
     client.apiClient.mockResolvedValue({ totals: {} })
     const { getNutrition } = await import('../recipes.js')
     await getNutrition(['2 cups flour'], '4')
-    expect(client.apiClient).toHaveBeenCalledWith('/get-nutrition', { ingredients: ['2 cups flour'], servings: '4' })
+    expect(client.apiClient).toHaveBeenCalledWith('/get-nutrition', { ingredients: ['2 cups flour'], servings: '4', overrides: undefined })
+  })
+})
+
+describe('getNutrition overrides', () => {
+  it('sends ingredients, servings, and overrides in the body', async () => {
+    client.apiClient.mockResolvedValue({ totals: {} })
+    const { getNutrition } = await import('../recipes.js')
+    await getNutrition(['1 egg'], '2', [{ index: 0, type: 'exclude' }])
+    expect(client.apiClient).toHaveBeenCalledWith('/get-nutrition', { ingredients: ['1 egg'], servings: '2', overrides: [{ index: 0, type: 'exclude' }] })
   })
 })

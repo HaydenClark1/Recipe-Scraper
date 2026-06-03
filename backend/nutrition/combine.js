@@ -37,21 +37,65 @@ function round(n, dp) {
   return Math.round(n * f) / f
 }
 
-async function combineNutrition(ingredients, servings, { searchFood }) {
+async function combineNutrition(ingredients, servings, { searchFood, overrides = [] }) {
   const items = []
   const totals = { calories: 0, fat: 0, carbs: 0, protein: 0 }
   let estimated = false
 
-  for (const line of ingredients || []) {
-    const { quantity, unit, name } = parseIngredient(line)
+  const lines = ingredients || []
+
+  // index -> { replace?, amount?, exclude? }
+  const ovByIndex = new Map()
+  for (const o of overrides || []) {
+    if (!ovByIndex.has(o.index)) ovByIndex.set(o.index, {})
+    ovByIndex.get(o.index)[o.type] = o
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const ov = ovByIndex.get(i) || {}
+    let { quantity, unit, name } = parseIngredient(lines[i])
+    if (ov.amount) { quantity = ov.amount.quantity; unit = ov.amount.unit }
+
+    if (ov.exclude) {
+      items.push({ name, matched: false, excluded: true, overridden: true, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      continue
+    }
+
+    if (ov.manual) {
+      const m = ov.manual
+      const item = {
+        name,
+        matched: true,
+        excluded: false,
+        overridden: true,
+        matchedName: 'Manual entry',
+        matchedBasis: null,
+        scaleFactor: null,
+        grams: null,
+        calories: Math.round(m.calories || 0),
+        fat: round(m.fat || 0, 1),
+        carbs: round(m.carbs || 0, 1),
+        protein: round(m.protein || 0, 1),
+      }
+      items.push(item)
+      totals.calories += item.calories
+      totals.fat += item.fat
+      totals.carbs += item.carbs
+      totals.protein += item.protein
+      continue
+    }
 
     let match = null
-    try { match = await searchFood(cleanForSearch(name)) } catch { match = null }
+    if (ov.replace) {
+      match = { food_name: ov.replace.foodName, food_description: ov.replace.foodDescription }
+    } else {
+      try { match = await searchFood(cleanForSearch(name)) } catch { match = null }
+    }
     const desc = match && parseFoodDescription(match.food_description)
 
     if (!desc) {
       estimated = true
-      items.push({ name, matched: false, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      items.push({ name, matched: false, excluded: false, overridden: !!(ov.replace || ov.amount), grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
       continue
     }
 
@@ -87,6 +131,8 @@ async function combineNutrition(ingredients, servings, { searchFood }) {
     const item = {
       name,
       matched: true,
+      excluded: false,
+      overridden: !!(ov.replace || ov.amount),
       matchedName: match.food_name || null,
       matchedBasis: match.food_description || null,
       scaleFactor: round(scale, 4),

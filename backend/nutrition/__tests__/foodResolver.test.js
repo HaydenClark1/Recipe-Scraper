@@ -43,3 +43,21 @@ test('returns null when USDA misses and no FatSecret provided', async () => {
   const resolve = makeFoodResolver({ usdaSearch: async () => null })
   assert.strictEqual(await resolve('xyz'), null)
 })
+
+const { makeFoodsResolver } = require('../foodResolver')
+
+test('makeFoodsResolver returns USDA candidates when present', async () => {
+  const resolve = makeFoodsResolver({
+    usdaSearchMany: async () => [{ food_name: 'A', food_description: 'd' }],
+    fatsecretSearchMany: async () => [{ food_name: 'B', food_description: 'd2' }],
+  })
+  assert.deepStrictEqual((await resolve('x'))[0].food_name, 'A')
+})
+
+test('makeFoodsResolver falls back to FatSecret when USDA empty', async () => {
+  const resolve = makeFoodsResolver({
+    usdaSearchMany: async () => [],
+    fatsecretSearchMany: async () => [{ food_name: 'B', food_description: 'd2' }],
+  })
+  assert.deepStrictEqual((await resolve('x'))[0].food_name, 'B')
+})

@@ -1,0 +1,2 @@
+Instead of grabbing first result from DB, should take all results and find best fit based on ingredient. 
+EX) Ingrident Onion matches [Onion rings, breaded, par fried, frozen, unprepared, Yellow Onion, Onion, Onion knots, Onion stir fry]. Our backend should pick Onion as it matches the best with the ingredient.

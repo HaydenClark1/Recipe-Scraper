@@ -41,8 +41,9 @@ model SavedRecipe {
   totalTime    String?  @db.NVarChar(100)
   category     String?  @db.NVarChar(500)
   cuisine      String?  @db.NVarChar(500)
-  sourceUrl    String?  @db.NVarChar(1000)
-  createdAt    DateTime @default(now())
+  sourceUrl       String?  @db.NVarChar(1000)
+  createdAt       DateTime @default(now())
+  ingredientsData String?  @db.NVarChar(Max)
 
   @@index([userId])
 }
