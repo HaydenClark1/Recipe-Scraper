@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getNutrition } from '../../api/recipes.js'
 import { Spinner } from '../ui/Spinner.jsx'
-import { EditIngredientsModal } from '../EditIngredientsModal.jsx'
 import './NutritionCard.css'
 
 const MACROS = [
@@ -55,11 +54,10 @@ function IngredientBreakdown({ items }) {
   )
 }
 
-export function NutritionCard({ recipe, overrides = [], actions, onEditDone }) {
+export function NutritionCard({ recipe, overrides = [], onEdit }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     if (!recipe.ingredients.length) {
@@ -113,22 +111,13 @@ export function NutritionCard({ recipe, overrides = [], actions, onEditDone }) {
           <p className="nutrition-label__note">
             Estimated{total ? ` · ${matched}/${total} ingredients matched` : ''}
           </p>
-          {actions && recipe.ingredients.length > 0 && (
-            <button className="nutrition-edit-btn" onClick={() => setEditing(true)} aria-label="Edit ingredients">
-              Edit ingredients
+          {onEdit && recipe.ingredients.length > 0 && (
+            <button className="nutrition-edit-btn" onClick={onEdit} aria-label="Edit ingredients">
+              Edit ingredients & nutrition
             </button>
           )}
           <IngredientBreakdown items={data.items} />
         </div>
-      )}
-      {editing && data && (
-        <EditIngredientsModal
-          ingredients={recipe.ingredients}
-          items={data.items}
-          overrides={overrides}
-          actions={actions}
-          onClose={() => { setEditing(false); onEditDone && onEditDone() }}
-        />
       )}
     </div>
   )

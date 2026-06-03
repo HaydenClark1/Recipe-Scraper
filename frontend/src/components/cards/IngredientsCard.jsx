@@ -1,6 +1,6 @@
 import './IngredientsCard.css'
 
-export function IngredientsCard({ recipe }) {
+export function IngredientsCard({ recipe, onEdit }) {
   return (
     <div className="ingredients-card">
       <h2 className="card-heading">Ingredients</h2>
@@ -12,6 +12,11 @@ export function IngredientsCard({ recipe }) {
             <li key={i} className="ingredients-item">{ing}</li>
           ))}
         </ul>
+      )}
+      {onEdit && (
+        <button className="card-edit-btn" onClick={onEdit} aria-label="Edit ingredients">
+          Edit ingredients
+        </button>
       )}
     </div>
   )

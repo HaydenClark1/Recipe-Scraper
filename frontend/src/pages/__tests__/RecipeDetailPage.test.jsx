@@ -1,0 +1,44 @@
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+import { RecipeDetailPage } from '../RecipeDetailPage.jsx'
+
+vi.mock('../../api/recipes.js', () => ({
+  getNutrition: vi.fn().mockResolvedValue({
+    perServing: { calories: 100, fat: 1, carbs: 1, protein: 1 },
+    totals: { calories: 200, fat: 2, carbs: 2, protein: 2 },
+    items: [{ name: '2 eggs', matched: true, matchedName: 'egg', calories: 140, excluded: false }],
+    servings: 2,
+  }),
+  saveRecipe: vi.fn(),
+}))
+
+vi.mock('../../api/savedRecipes.js', () => ({
+  listSavedRecipes: vi.fn().mockResolvedValue({ recipes: [] }),
+  createSavedRecipe: vi.fn().mockResolvedValue({ recipe: { id: 1 } }),
+  deleteSavedRecipe: vi.fn(),
+  updateRecipe: vi.fn().mockResolvedValue({ recipe: {} }),
+}))
+
+vi.mock('../../context/RecipeContext.jsx', () => ({
+  useRecipe: () => ({ recipe: { title: 'Soup', servings: '2', ingredients: ['2 eggs', 'salt'], instructions: ['mix'], sourceUrl: 'http://x' } }),
+}))
+
+vi.mock('../../components/RecipeCarousel.jsx', () => ({
+  RecipeCarousel: ({ slides }) => <div>{slides}</div>,
+}))
+
+describe('RecipeDetailPage editing', () => {
+  it('opens the ingredients editor from a card edit button', async () => {
+    render(<MemoryRouter><RecipeDetailPage /></MemoryRouter>)
+    const btns = await screen.findAllByRole('button', { name: /edit ingredients/i })
+    fireEvent.click(btns[0])
+    expect(screen.getByRole('dialog', { name: /edit ingredients/i })).toBeInTheDocument()
+  })
+
+  it('opens the instructions editor from the Instructions card edit button', async () => {
+    render(<MemoryRouter><RecipeDetailPage /></MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: /edit instructions/i }))
+    expect(screen.getByRole('dialog', { name: /edit instructions/i })).toBeInTheDocument()
+  })
+})

@@ -75,12 +75,12 @@ describe('NutritionCard editing', () => {
     await waitFor(() => expect(recipesApi.getNutrition).toHaveBeenCalledWith(recipe.ingredients, recipe.servings, [{ index: 0, type: 'exclude' }]))
   })
 
-  it('opens the edit modal from the Edit ingredients button', async () => {
+  it('calls onEdit when Edit ingredients button is clicked', async () => {
     const recipe = { ingredients: ['2 chicken breasts'], servings: '2' }
-    const actions = { replace: vi.fn(), setAmount: vi.fn(), exclude: vi.fn(), unexclude: vi.fn() }
-    render(<NutritionCard recipe={recipe} overrides={[]} actions={actions} />)
+    const onEdit = vi.fn()
+    render(<NutritionCard recipe={recipe} overrides={[]} onEdit={onEdit} />)
     await waitFor(() => screen.getByRole('button', { name: /edit ingredients/i }))
     fireEvent.click(screen.getByRole('button', { name: /edit ingredients/i }))
-    expect(screen.getByRole('dialog', { name: /edit ingredients/i })).toBeInTheDocument()
+    expect(onEdit).toHaveBeenCalledOnce()
   })
 })
