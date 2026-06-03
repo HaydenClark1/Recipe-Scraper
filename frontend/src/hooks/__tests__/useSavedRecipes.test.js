@@ -27,8 +27,8 @@ describe('useSavedRecipes', () => {
     api.createSavedRecipe.mockResolvedValue({ recipe: saved })
     const { result } = renderHook(() => useSavedRecipes())
     await waitFor(() => expect(result.current.list).toEqual([]))
-    await act(async () => { await result.current.add({ title: 'Soup' }, []) })
-    expect(api.createSavedRecipe).toHaveBeenCalledWith({ title: 'Soup' }, [])
+    await act(async () => { await result.current.add({ title: 'Soup' }) })
+    expect(api.createSavedRecipe).toHaveBeenCalledWith({ title: 'Soup' })
     expect(result.current.list).toHaveLength(1)
   })
 

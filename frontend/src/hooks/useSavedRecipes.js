@@ -11,8 +11,8 @@ export function useSavedRecipes() {
 
   useEffect(() => { refresh().catch(() => {}) }, [refresh])
 
-  const add = useCallback(async (recipe, overrides) => {
-    const { recipe: saved } = await createSavedRecipe(recipe, overrides)
+  const add = useCallback(async (recipe) => {
+    const { recipe: saved } = await createSavedRecipe(recipe)
     setList((prev) => [...prev, saved])
     return saved
   }, [])
