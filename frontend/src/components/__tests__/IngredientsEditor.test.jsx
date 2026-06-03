@@ -3,7 +3,11 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { IngredientsEditor } from '../IngredientsEditor.jsx'
 
 vi.mock('../../api/foods.js', () => ({
-  searchFoods: vi.fn().mockResolvedValue({ foods: [{ food_name: 'Egg, whole', food_description: 'Per 100g - Calories: 143kcal' }] }),
+  searchFoods: vi.fn((q, source) => Promise.resolve({
+    foods: source === 'web'
+      ? [{ food_name: 'Egg (web)', food_description: 'Per 1 large - Calories: 72kcal' }]
+      : [{ food_name: 'Egg, whole', food_description: 'Per 100g - Calories: 143kcal' }],
+  })),
 }))
 
 function makeEditor(ingredients) {
@@ -85,5 +89,35 @@ describe('IngredientsEditor', () => {
     fireEvent.change(screen.getByLabelText(/^unit$/i), { target: { value: 'cup' } })
     fireEvent.click(screen.getByRole('button', { name: /apply amount/i }))
     expect(editor.setAmount).toHaveBeenCalledWith('a', 0.25, 'cup')
+  })
+})
+
+describe('IngredientsEditor nutritionItems wiring', () => {
+  const nutritionItems = [
+    { name: '2 eggs', matched: true, matchedName: 'Egg, whole', grams: 100, needsAmount: false },
+    { name: 'salt', matched: false, needsAmount: false },
+  ]
+
+  it('shows what each line matched to', () => {
+    render(<IngredientsEditor editor={makeEditor(ingredients)} items={ingredients} nutritionItems={nutritionItems} onClose={vi.fn()} />)
+    expect(screen.getByText(/matched to/i)).toBeInTheDocument()
+    expect(screen.getByText(/Egg, whole/)).toBeInTheDocument()
+  })
+
+  it('shows a needs-amount badge and opens the amount panel', () => {
+    const needsItems = [{ id: 'a', text: '1 chicken breast', nutrition: null }]
+    const needsNi = [{ name: '1 chicken breast', matched: true, matchedName: 'Chicken breast', grams: null, needsAmount: true }]
+    const editor = makeEditor(needsItems)
+    render(<IngredientsEditor editor={editor} items={needsItems} nutritionItems={needsNi} onClose={vi.fn()} />)
+    const badge = screen.getByRole('button', { name: /needs amount/i })
+    fireEvent.click(badge)
+    expect(screen.getByLabelText('Quantity')).toBeInTheDocument()
+  })
+
+  it('Search the web queries FatSecret and lists results', async () => {
+    render(<IngredientsEditor editor={makeEditor(ingredients)} items={ingredients} nutritionItems={nutritionItems} onClose={vi.fn()} />)
+    fireEvent.click(screen.getAllByRole('button', { name: /replace/i })[0])
+    fireEvent.click(screen.getByRole('button', { name: /search the web/i }))
+    await waitFor(() => expect(screen.getByText(/Egg \(web\)/)).toBeInTheDocument())
   })
 })
