@@ -82,17 +82,24 @@ function ManualPanel({ onApply }) {
   )
 }
 
-function nutritionSummary(n) {
-  if (!n) return 'auto match'
-  if (n.excluded) return 'excluded'
-  if (n.manual) return `manual · ${n.manual.calories} cal`
-  const bits = []
-  if (n.food) bits.push(n.food.foodName)
-  if (n.amount) bits.push(`${n.amount.quantity} ${n.amount.unit}`)
-  return bits.join(' · ') || 'auto match'
+function nutritionSummary(n, autoItem) {
+  if (n?.excluded) return 'excluded'
+  if (n?.manual) return `manual · ${n.manual.calories} cal`
+  if (n?.food) {
+    const parts = [n.food.foodName]
+    if (n.amount) parts.push(`${n.amount.quantity} ${n.amount.unit}`)
+    return parts.join(' · ')
+  }
+  // No override — show the auto-matched result from the backend
+  if (autoItem) {
+    if (autoItem.excluded) return 'excluded'
+    if (!autoItem.matched) return 'no match found'
+    return `${autoItem.matchedName} · ${autoItem.calories} cal`
+  }
+  return 'not computed'
 }
 
-function Row({ item, editor }) {
+function Row({ item, editor, autoItem }) {
   const [panel, setPanel] = useState(null)
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id })
   const style = { transform: CSS.Transform.toString(transform), transition }
@@ -105,7 +112,7 @@ function Row({ item, editor }) {
         <button className="ing-btn ing-btn--danger" aria-label="Delete ingredient"
           onClick={() => editor.deleteIngredient(item.id)}>Del</button>
       </div>
-      <div className="ing-row__summary">{nutritionSummary(item.nutrition)}</div>
+      <div className="ing-row__summary">{nutritionSummary(item.nutrition, autoItem)}</div>
       <div className="ing-row__actions">
         <button className="ing-btn" aria-label="Replace" onClick={() => setPanel(panel === 'replace' ? null : 'replace')}>Replace</button>
         <button className="ing-btn" aria-label="Amount" onClick={() => setPanel(panel === 'amount' ? null : 'amount')}>Amount</button>
@@ -120,7 +127,7 @@ function Row({ item, editor }) {
   )
 }
 
-export function IngredientsEditor({ editor, items, onClose }) {
+export function IngredientsEditor({ editor, items, nutritionItems = [], onClose }) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -137,7 +144,7 @@ export function IngredientsEditor({ editor, items, onClose }) {
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
           <ul className="ing-editor__list">
-            {items.map((item) => <Row key={item.id} item={item} editor={editor} />)}
+            {items.map((item, i) => <Row key={item.id} item={item} editor={editor} autoItem={nutritionItems[i]} />)}
           </ul>
         </SortableContext>
       </DndContext>

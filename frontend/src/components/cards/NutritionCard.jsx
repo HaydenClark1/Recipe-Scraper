@@ -112,7 +112,7 @@ export function NutritionCard({ recipe, overrides = [], onEdit }) {
             Estimated{total ? ` · ${matched}/${total} ingredients matched` : ''}
           </p>
           {onEdit && recipe.ingredients.length > 0 && (
-            <button className="nutrition-edit-btn" onClick={onEdit} aria-label="Edit ingredients">
+            <button className="nutrition-edit-btn" onClick={() => onEdit(data.items)} aria-label="Edit ingredients">
               Edit ingredients & nutrition
             </button>
           )}

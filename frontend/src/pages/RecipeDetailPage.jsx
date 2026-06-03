@@ -19,6 +19,7 @@ export function RecipeDetailPage() {
   const { add, remove, findSaved } = useSavedRecipes()
   const [saveDbState, setSaveDbState] = useState('idle')
   const [editingIngredients, setEditingIngredients] = useState(false)
+  const [nutritionItems, setNutritionItems] = useState([])
 
   const savedRow = recipe ? findSaved(recipe) : null
   const editor = useRecipeEditor(savedRow || recipe || {})
@@ -76,11 +77,11 @@ export function RecipeDetailPage() {
           <ImageCard recipe={derivedRecipe} isFav={fav} onToggleFav={handleToggleFav} saveDbState={saveDbState} onSaveToDb={handleSaveToDb} />,
           <IngredientsCard recipe={derivedRecipe} />,
           <InstructionsCard recipe={derivedRecipe} />,
-          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} onEdit={() => setEditingIngredients(true)} />,
+          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} onEdit={(items) => { setNutritionItems(items); setEditingIngredients(true) }} />,
         ]}
       />
       {editingIngredients && (
-        <IngredientsEditor editor={editor} items={editor.ingredients} onClose={() => setEditingIngredients(false)} />
+        <IngredientsEditor editor={editor} items={editor.ingredients} nutritionItems={nutritionItems} onClose={() => setEditingIngredients(false)} />
       )}
     </div>
   )
