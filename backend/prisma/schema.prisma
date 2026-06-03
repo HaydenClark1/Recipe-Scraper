@@ -41,29 +41,9 @@ model SavedRecipe {
   totalTime    String?  @db.NVarChar(100)
   category     String?  @db.NVarChar(500)
   cuisine      String?  @db.NVarChar(500)
-  sourceUrl    String?  @db.NVarChar(1000)
-  createdAt    DateTime @default(now())
-  overrides    IngredientOverride[]
+  sourceUrl       String?  @db.NVarChar(1000)
+  createdAt       DateTime @default(now())
+  ingredientsData String?  @db.NVarChar(Max)
 
   @@index([userId])
-}
-
-model IngredientOverride {
-  id              Int         @id @default(autoincrement())
-  savedRecipeId   Int
-  savedRecipe     SavedRecipe @relation(fields: [savedRecipeId], references: [id], onDelete: Cascade)
-  ingredientIndex Int
-  type            String      @db.NVarChar(20)
-
-  foodName        String?     @db.NVarChar(500)
-  foodDescription String?     @db.NVarChar(1000)
-  fdcId           Int?
-
-  quantity        Float?
-  unit            String?     @db.NVarChar(50)
-
-  createdAt       DateTime    @default(now())
-
-  @@index([savedRecipeId])
-  @@unique([savedRecipeId, ingredientIndex, type])
 }

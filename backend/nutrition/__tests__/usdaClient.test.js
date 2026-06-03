@@ -98,3 +98,33 @@ test('makeUsdaSearchMany returns [] for short queries', async () => {
   const searchFoods = makeUsdaSearchMany(buildIndex([]), [], 5)
   assert.deepStrictEqual(await searchFoods('a'), [])
 })
+
+// --- Best-fit ranking tests ---
+
+const ONION_FOODS = [
+  { fdcId: 100, description: 'Onion rings, breaded, par fried, frozen, unprepared', calories: 276, fat: 13, carbs: 36, protein: 4 },
+  { fdcId: 101, description: 'Onions, raw', calories: 40, fat: 0.1, carbs: 9.3, protein: 1.1 },
+  { fdcId: 102, description: 'Onion knots', calories: 300, fat: 10, carbs: 45, protein: 6 },
+  { fdcId: 103, description: 'Onion stir fry', calories: 85, fat: 4, carbs: 11, protein: 2 },
+  { fdcId: 104, description: 'Yellow Onion', calories: 44, fat: 0.1, carbs: 10, protein: 1.2 },
+]
+
+test('makeUsdaSearch picks plain onion over processed forms for query "onion"', async () => {
+  const search = makeUsdaSearch(buildIndex(ONION_FOODS), ONION_FOODS)
+  const result = await search('onion')
+  assert.ok(
+    result && (result.food_name === 'Onions, raw' || result.food_name === 'Yellow Onion'),
+    `Expected plain onion but got: ${result && result.food_name}`
+  )
+})
+
+test('makeUsdaSearchMany returns plain onion ranked first for query "onion"', async () => {
+  const searchFoods = makeUsdaSearchMany(buildIndex(ONION_FOODS), ONION_FOODS, 10)
+  const results = await searchFoods('onion')
+  assert.ok(results.length > 0, 'Expected at least one result')
+  const topName = results[0].food_name
+  assert.ok(
+    topName === 'Onions, raw' || topName === 'Yellow Onion',
+    `Expected plain onion first but got: ${topName}`
+  )
+})

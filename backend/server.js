@@ -53,7 +53,6 @@ let jsonData = [];
 
 (async () => {
   jsonData = await loadCSVFromGitHub();
-  console.log(jsonData);
   await initNutrition();
   const port = process.env.PORT || 7000;
   app.listen(port, () => {
