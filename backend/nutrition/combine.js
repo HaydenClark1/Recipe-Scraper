@@ -57,7 +57,7 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
     if (ov.amount) { quantity = ov.amount.quantity; unit = ov.amount.unit }
 
     if (ov.exclude) {
-      items.push({ name, matched: false, excluded: true, overridden: true, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      items.push({ name, matched: false, excluded: true, overridden: true, needsAmount: false, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
       continue
     }
 
@@ -68,6 +68,7 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
         matched: true,
         excluded: false,
         overridden: true,
+        needsAmount: false,
         matchedName: 'Manual entry',
         matchedBasis: null,
         scaleFactor: null,
@@ -95,7 +96,7 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
 
     if (!desc) {
       estimated = true
-      items.push({ name, matched: false, excluded: false, overridden: !!(ov.replace || ov.amount), grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
+      items.push({ name, matched: false, excluded: false, overridden: !!(ov.replace || ov.amount), needsAmount: false, grams: null, calories: 0, fat: 0, carbs: 0, protein: 0 })
       continue
     }
 
@@ -133,6 +134,7 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
       matched: true,
       excluded: false,
       overridden: !!(ov.replace || ov.amount),
+      needsAmount: approx && grams == null,
       matchedName: match.food_name || null,
       matchedBasis: match.food_description || null,
       scaleFactor: round(scale, 4),

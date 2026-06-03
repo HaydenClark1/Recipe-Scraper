@@ -177,3 +177,25 @@ test('exclude takes precedence over manual', async () => {
   assert.strictEqual(items[0].calories, 0)
   assert.strictEqual(totals.calories, 0)
 })
+
+test('flags needsAmount when a bare count matches a per-mass basis', async () => {
+  const searchFood = fake({
+    'chicken': { food_name: 'Chicken breast', food_description: 'Per 100g - Calories: 165kcal | Fat: 3.6g | Carbs: 0g | Protein: 31g' },
+  })
+  const r = await combineNutrition(['1 chicken breast'], null, { searchFood })
+  assert.strictEqual(r.items[0].matched, true)
+  assert.strictEqual(r.items[0].needsAmount, true)
+})
+
+test('does not flag needsAmount when grams are known', async () => {
+  const searchFood = fake({
+    sugar: { food_name: 'Sugar', food_description: 'Per 100g - Calories: 400kcal | Fat: 0g | Carbs: 100g | Protein: 0g' },
+  })
+  const r = await combineNutrition(['200 g sugar'], null, { searchFood })
+  assert.strictEqual(r.items[0].needsAmount, false)
+})
+
+test('unmatched and excluded items report needsAmount false', async () => {
+  const r = await combineNutrition(['1 pinch unobtainium'], null, { searchFood: fake({}) })
+  assert.strictEqual(r.items[0].needsAmount, false)
+})

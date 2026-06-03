@@ -10,6 +10,12 @@ function pickFood(data) {
   return food
 }
 
+function pickFoods(data) {
+  const food = data && data.foods && data.foods.food
+  if (!food) return []
+  return Array.isArray(food) ? food : [food]
+}
+
 function makeOAuth() {
   return OAuth({
     consumer: {
@@ -24,7 +30,7 @@ function makeOAuth() {
 
 // 2-legged OAuth 1.0 (no token). Sign the request, then send method params
 // and oauth_* params together as the GET query string.
-async function searchFood(name) {
+async function requestFoods(name) {
   const oauth = makeOAuth()
   const data = { method: 'foods.search', search_expression: name, format: 'json' }
   const oauthParams = oauth.authorize({ url: ENDPOINT, method: 'GET', data })
@@ -34,7 +40,18 @@ async function searchFood(name) {
   if (!res.ok) throw new Error(`FatSecret HTTP ${res.status}`)
   const json = await res.json()
   if (json && json.error) throw new Error(`FatSecret error: ${json.error.message || 'unknown'}`)
-  return pickFood(json)
+  return json
 }
 
-module.exports = { searchFood, pickFood, ENDPOINT }
+async function searchFood(name) {
+  return pickFood(await requestFoods(name))
+}
+
+async function searchFoods(name) {
+  return pickFoods(await requestFoods(name)).map((f) => ({
+    food_name: f.food_name,
+    food_description: f.food_description,
+  }))
+}
+
+module.exports = { searchFood, searchFoods, pickFood, pickFoods, ENDPOINT }

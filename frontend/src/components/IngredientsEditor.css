@@ -33,3 +33,8 @@
 .ing-manual__field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary); }
 .ing-manual__field input { min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); }
 .ing-manual__field input:focus { border-color: var(--accent); outline: none; }
+.ing-row__match { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--text-secondary); margin: 0.15rem 0 0.35rem; }
+.ing-row__nomatch { font-style: italic; }
+.ing-badge--warn { border: none; border-radius: 999px; padding: 0.15rem 0.6rem; font-size: 0.75rem; background: #fde68a; color: #7c2d12; cursor: pointer; min-height: 28px; }
+.ing-current { font-size: 0.8rem; color: var(--text-secondary); margin: 0 0 0.4rem; }
+.ing-btn--web { width: 100%; }

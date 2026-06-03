@@ -40,3 +40,18 @@
 .saved-list {
   list-style: none;
 }
+
+.saved-search {
+  padding: 0 1rem 0.5rem;
+}
+
+.saved-search__input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.9rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 0.75rem);
+  background: var(--surface);
+  color: var(--text-primary);
+}

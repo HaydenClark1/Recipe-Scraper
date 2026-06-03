@@ -10,7 +10,7 @@ const {Readable} = require("stream");
 
 const { scrapeRecipe } = require("./scraper");
 const { combineNutrition } = require("./nutrition/combine");
-const { searchFood: fatsecretSearch } = require("./nutrition/fatsecretClient");
+const { searchFood: fatsecretSearch, searchFoods: fatsecretSearchFoods } = require("./nutrition/fatsecretClient");
 const { loadFoods, buildIndex, makeUsdaSearch, makeUsdaSearchMany } = require("./nutrition/usdaClient");
 const { makeFoodResolver, makeFoodsResolver } = require("./nutrition/foodResolver");
 const { PrismaClient } = require("@prisma/client");
@@ -179,9 +179,15 @@ app.post('/save-recipe', async (req,res) => {
 
 app.get('/search-foods', async (req, res) => {
   const q = (req.query.q || '').toString().trim();
+  const source = (req.query.source || 'local').toString();
   if (q.length < 2) return res.status(400).json({ error: 'query too short' });
   try {
-    const foods = await resolveFoods(q);
+    let foods;
+    if (source === 'web') {
+      try { foods = await fatsecretSearchFoods(q); } catch { foods = []; }
+    } else {
+      foods = await resolveFoods(q);
+    }
     return res.status(200).json({ foods });
   } catch (err) {
     console.error('Food search failed:', err.message);

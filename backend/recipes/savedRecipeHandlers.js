@@ -1,4 +1,5 @@
 const crypto = require('crypto')
+const Fuse = require('fuse.js')
 
 function newId() {
   return crypto.randomUUID()
@@ -98,7 +99,22 @@ function makeUpdateHandler(prisma) {
   }
 }
 
+function makeSearchHandler(prisma) {
+  return async function search(req, res) {
+    const q = (req.query && req.query.q ? String(req.query.q) : '').trim()
+    const rows = await prisma.savedRecipe.findMany({ where: { userId: req.userId } })
+    const recipes = rows.map(deserializeRecipe)
+    if (!q) return res.status(200).json({ recipes })
+    const fuse = new Fuse(recipes, {
+      keys: ['title', 'ingredients'],
+      threshold: 0.4,
+      ignoreLocation: true,
+    })
+    return res.status(200).json({ recipes: fuse.search(q).map((r) => r.item) })
+  }
+}
+
 module.exports = {
   serializeRecipe, deserializeRecipe,
-  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler,
+  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler, makeSearchHandler,
 }
