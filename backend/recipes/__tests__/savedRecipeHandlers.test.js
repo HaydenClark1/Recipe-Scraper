@@ -2,8 +2,7 @@ const test = require('node:test')
 const assert = require('node:assert')
 const {
   serializeRecipe, deserializeRecipe,
-  makeListHandler, makeCreateHandler, makeDeleteHandler,
-  makeReplaceOverridesHandler,
+  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler,
 } = require('../savedRecipeHandlers')
 
 function mockRes() {
@@ -80,50 +79,82 @@ test('delete 404 when nothing was deleted (not owned)', async () => {
   assert.strictEqual(res.statusCode, 404)
 })
 
-test('deserializeRecipe maps override rows to wire shape', () => {
+test('serializeRecipe stores ingredientsData and derives the flat ingredients column', () => {
+  const data = serializeRecipe({
+    title: 'T',
+    ingredientsData: [
+      { id: 'a', text: '2 eggs', nutrition: { manual: { calories: 140 } } },
+      { id: 'b', text: 'salt', nutrition: { excluded: true } },
+    ],
+    instructions: ['mix', 'cook'],
+  }, 7)
+  assert.deepStrictEqual(JSON.parse(data.ingredients), ['2 eggs', 'salt'])
+  assert.deepStrictEqual(JSON.parse(data.instructions), ['mix', 'cook'])
+  const rich = JSON.parse(data.ingredientsData)
+  assert.strictEqual(rich[0].text, '2 eggs')
+  assert.deepStrictEqual(rich[0].nutrition, { manual: { calories: 140 } })
+  assert.strictEqual(data.userId, 7)
+})
+
+test('serializeRecipe accepts plain string ingredients (wraps them)', () => {
+  const data = serializeRecipe({ title: 'T', ingredients: ['a', 'b'], instructions: [] }, 1)
+  const rich = JSON.parse(data.ingredientsData)
+  assert.strictEqual(rich.length, 2)
+  assert.strictEqual(rich[0].text, 'a')
+  assert.strictEqual(rich[0].nutrition, null)
+  assert.ok(typeof rich[0].id === 'string' && rich[0].id.length > 0)
+})
+
+test('deserializeRecipe parses ingredientsData into rich + flat ingredients', () => {
   const r = deserializeRecipe({
-    id: 1, title: 'T', image: null, ingredients: '["i"]', instructions: '["s"]',
+    id: 1, title: 'T', image: null,
+    ingredients: '["2 eggs","salt"]',
+    instructions: '["mix"]',
     servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
     sourceUrl: null, createdAt: 't',
-    overrides: [
-      { ingredientIndex: 0, type: 'replace', foodName: 'Chicken', foodDescription: 'd', fdcId: 9, quantity: null, unit: null },
-      { ingredientIndex: 2, type: 'exclude', foodName: null, foodDescription: null, fdcId: null, quantity: null, unit: null },
-    ],
+    ingredientsData: '[{"id":"a","text":"2 eggs","nutrition":{"manual":{"calories":140}}},{"id":"b","text":"salt","nutrition":{"excluded":true}}]',
   })
-  assert.deepStrictEqual(r.overrides[0], { index: 0, type: 'replace', foodName: 'Chicken', foodDescription: 'd', fdcId: 9 })
-  assert.deepStrictEqual(r.overrides[1], { index: 2, type: 'exclude' })
+  assert.deepStrictEqual(r.ingredients, ['2 eggs', 'salt'])
+  assert.strictEqual(r.ingredientsData[0].id, 'a')
+  assert.deepStrictEqual(r.ingredientsData[1].nutrition, { excluded: true })
+  assert.deepStrictEqual(r.instructions, ['mix'])
 })
 
-test('create persists nested override rows', async () => {
-  let createArg = null
-  const prisma = { savedRecipe: { create: async (arg) => { createArg = arg; return { id: 2, ...arg.data, overrides: [] } } } }
+test('deserializeRecipe falls back to plain ingredients when ingredientsData is null (legacy)', () => {
+  const r = deserializeRecipe({
+    id: 1, title: 'T', image: null,
+    ingredients: '["2 eggs","salt"]',
+    instructions: '["mix"]',
+    servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
+    sourceUrl: null, createdAt: 't',
+    ingredientsData: null,
+  })
+  assert.deepStrictEqual(r.ingredients, ['2 eggs', 'salt'])
+  assert.strictEqual(r.ingredientsData.length, 2)
+  assert.strictEqual(r.ingredientsData[0].text, '2 eggs')
+  assert.strictEqual(r.ingredientsData[0].nutrition, null)
+})
+
+test('update replaces editable fields, scoped to the owner', async () => {
+  let updateArg = null
+  const prisma = {
+    savedRecipe: {
+      findFirst: async ({ where }) => (where.id === 5 && where.userId === 9 ? { id: 5 } : null),
+      update: async (arg) => { updateArg = arg; return { id: 5, ...arg.data, ingredients: arg.data.ingredients, instructions: arg.data.instructions } },
+    },
+  }
   const res = mockRes()
-  const req = { userId: 9, body: { recipe: { title: 'B', ingredients: ['i'], instructions: ['s'] }, overrides: [{ index: 0, type: 'exclude' }] } }
-  await makeCreateHandler(prisma)(req, res)
-  assert.strictEqual(res.statusCode, 201)
-  assert.strictEqual(createArg.data.overrides.create[0].ingredientIndex, 0)
-  assert.strictEqual(createArg.data.overrides.create[0].type, 'exclude')
+  const req = { userId: 9, params: { id: '5' }, body: { recipe: { title: 'New', ingredientsData: [{ id: 'a', text: 'x', nutrition: null }], instructions: ['s1'] } } }
+  await makeUpdateHandler(prisma)(req, res)
+  assert.strictEqual(res.statusCode, 200)
+  assert.strictEqual(updateArg.where.id, 5)
+  assert.deepStrictEqual(JSON.parse(updateArg.data.ingredients), ['x'])
+  assert.strictEqual(JSON.parse(updateArg.data.ingredientsData)[0].text, 'x')
 })
 
-test('replaceOverrides 404 when recipe not owned', async () => {
+test('update 404 when recipe not owned', async () => {
   const prisma = { savedRecipe: { findFirst: async () => null } }
   const res = mockRes()
-  await makeReplaceOverridesHandler(prisma)({ userId: 9, params: { id: '5' }, body: { overrides: [] } }, res)
+  await makeUpdateHandler(prisma)({ userId: 9, params: { id: '5' }, body: { recipe: { title: 'X' } } }, res)
   assert.strictEqual(res.statusCode, 404)
-})
-
-test('replaceOverrides deletes then recreates the set', async () => {
-  const calls = []
-  const prisma = {
-    savedRecipe: { findFirst: async () => ({ id: 5, overrides: [] }) },
-    ingredientOverride: { deleteMany: async (a) => { calls.push(['del', a]); }, createMany: async (a) => { calls.push(['create', a]); } },
-    $transaction: async (ops) => Promise.all(ops),
-  }
-  // Make deleteMany/createMany return thenables usable by $transaction's Promise.all
-  prisma.ingredientOverride.deleteMany = async (a) => calls.push(['del', a.where.savedRecipeId])
-  prisma.ingredientOverride.createMany = async (a) => calls.push(['create', a.data.length])
-  const res = mockRes()
-  await makeReplaceOverridesHandler(prisma)({ userId: 9, params: { id: '5' }, body: { overrides: [{ index: 0, type: 'exclude' }] } }, res)
-  assert.strictEqual(res.statusCode, 200)
-  assert.deepStrictEqual(calls, [['del', 5], ['create', 1]])
 })

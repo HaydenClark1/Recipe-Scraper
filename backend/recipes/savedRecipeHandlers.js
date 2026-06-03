@@ -1,34 +1,25 @@
-function toOverrideRow(o) {
-  return {
-    ingredientIndex: o.index,
-    type: o.type,
-    foodName: o.foodName ?? null,
-    foodDescription: o.foodDescription ?? null,
-    fdcId: o.fdcId ?? null,
-    quantity: o.quantity ?? null,
-    unit: o.unit ?? null,
-  }
+const crypto = require('crypto')
+
+function newId() {
+  return crypto.randomUUID()
 }
 
-function fromOverrideRow(r) {
-  const o = { index: r.ingredientIndex, type: r.type }
-  if (r.type === 'replace') {
-    o.foodName = r.foodName
-    o.foodDescription = r.foodDescription
-    if (r.fdcId != null) o.fdcId = r.fdcId
-  } else if (r.type === 'amount') {
-    o.quantity = r.quantity
-    o.unit = r.unit
-  }
-  return o
+function normalizeIngredientItems(input) {
+  const arr = Array.isArray(input) ? input : []
+  return arr.map((el) =>
+    typeof el === 'string'
+      ? { id: newId(), text: el, nutrition: null }
+      : { id: el.id || newId(), text: el.text || '', nutrition: el.nutrition ?? null }
+  )
 }
 
 function serializeRecipe(recipe, userId) {
+  const rich = normalizeIngredientItems(recipe.ingredientsData ?? recipe.ingredients)
   return {
     userId,
     title: recipe.title || '',
     image: recipe.image ?? null,
-    ingredients: JSON.stringify(recipe.ingredients || []),
+    ingredients: JSON.stringify(rich.map((r) => r.text)),
     instructions: JSON.stringify(recipe.instructions || []),
     servings: recipe.servings ?? null,
     prepTime: recipe.prepTime ?? null,
@@ -36,15 +27,23 @@ function serializeRecipe(recipe, userId) {
     category: JSON.stringify(recipe.category || []),
     cuisine: JSON.stringify(recipe.cuisine || []),
     sourceUrl: recipe.sourceUrl ?? null,
+    ingredientsData: JSON.stringify(rich),
   }
 }
 
 function deserializeRecipe(row) {
+  let rich
+  if (row.ingredientsData) {
+    rich = JSON.parse(row.ingredientsData)
+  } else {
+    rich = JSON.parse(row.ingredients || '[]').map((text) => ({ id: newId(), text, nutrition: null }))
+  }
   return {
     id: row.id,
     title: row.title,
     image: row.image,
-    ingredients: JSON.parse(row.ingredients || '[]'),
+    ingredients: rich.map((r) => r.text),
+    ingredientsData: rich,
     instructions: JSON.parse(row.instructions || '[]'),
     servings: row.servings,
     prepTime: row.prepTime,
@@ -53,13 +52,12 @@ function deserializeRecipe(row) {
     cuisine: JSON.parse(row.cuisine || '[]'),
     sourceUrl: row.sourceUrl,
     createdAt: row.createdAt,
-    overrides: (row.overrides || []).map(fromOverrideRow),
   }
 }
 
 function makeListHandler(prisma) {
   return async function list(req, res) {
-    const rows = await prisma.savedRecipe.findMany({ where: { userId: req.userId }, include: { overrides: true } })
+    const rows = await prisma.savedRecipe.findMany({ where: { userId: req.userId } })
     return res.status(200).json({ recipes: rows.map(deserializeRecipe) })
   }
 }
@@ -70,10 +68,7 @@ function makeCreateHandler(prisma) {
     if (!recipe || !recipe.title) {
       return res.status(400).json({ error: 'recipe with a title is required' })
     }
-    const overrides = Array.isArray(req.body.overrides) ? req.body.overrides : []
-    const data = serializeRecipe(recipe, req.userId)
-    if (overrides.length) data.overrides = { create: overrides.map(toOverrideRow) }
-    const row = await prisma.savedRecipe.create({ data, include: { overrides: true } })
+    const row = await prisma.savedRecipe.create({ data: serializeRecipe(recipe, req.userId) })
     return res.status(201).json({ recipe: deserializeRecipe(row) })
   }
 }
@@ -87,25 +82,23 @@ function makeDeleteHandler(prisma) {
   }
 }
 
-function makeReplaceOverridesHandler(prisma) {
-  return async function replace(req, res) {
+function makeUpdateHandler(prisma) {
+  return async function update(req, res) {
     const id = Number(req.params.id)
-    const overrides = Array.isArray(req.body.overrides) ? req.body.overrides : []
-    const owned = await prisma.savedRecipe.findFirst({ where: { id, userId: req.userId }, include: { overrides: true } })
-    if (!owned) return res.status(404).json({ error: 'Recipe not found' })
-    const ops = [prisma.ingredientOverride.deleteMany({ where: { savedRecipeId: id } })]
-    if (overrides.length) {
-      ops.push(prisma.ingredientOverride.createMany({ data: overrides.map((o) => ({ ...toOverrideRow(o), savedRecipeId: id })) }))
+    const recipe = req.body && req.body.recipe
+    if (!recipe || !recipe.title) {
+      return res.status(400).json({ error: 'recipe with a title is required' })
     }
-    await prisma.$transaction(ops)
-    const updatedRow = { ...owned, overrides: overrides.map(toOverrideRow) }
-    return res.status(200).json({ recipe: deserializeRecipe(updatedRow) })
+    const owned = await prisma.savedRecipe.findFirst({ where: { id, userId: req.userId } })
+    if (!owned) return res.status(404).json({ error: 'Recipe not found' })
+    const data = serializeRecipe(recipe, req.userId)
+    delete data.userId
+    const row = await prisma.savedRecipe.update({ where: { id }, data })
+    return res.status(200).json({ recipe: deserializeRecipe(row) })
   }
 }
 
 module.exports = {
   serializeRecipe, deserializeRecipe,
-  toOverrideRow, fromOverrideRow,
-  makeListHandler, makeCreateHandler, makeDeleteHandler,
-  makeReplaceOverridesHandler,
+  makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler,
 }
