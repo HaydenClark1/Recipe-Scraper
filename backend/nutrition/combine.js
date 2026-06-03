@@ -61,6 +61,30 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
       continue
     }
 
+    if (ov.manual) {
+      const m = ov.manual
+      const item = {
+        name,
+        matched: true,
+        excluded: false,
+        overridden: true,
+        matchedName: 'Manual entry',
+        matchedBasis: null,
+        scaleFactor: null,
+        grams: null,
+        calories: Math.round(m.calories || 0),
+        fat: round(m.fat || 0, 1),
+        carbs: round(m.carbs || 0, 1),
+        protein: round(m.protein || 0, 1),
+      }
+      items.push(item)
+      totals.calories += item.calories
+      totals.fat += item.fat
+      totals.carbs += item.carbs
+      totals.protein += item.protein
+      continue
+    }
+
     let match = null
     if (ov.replace) {
       match = { food_name: ov.replace.foodName, food_description: ov.replace.foodDescription }
