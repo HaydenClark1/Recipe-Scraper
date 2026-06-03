@@ -10,6 +10,10 @@ html, body {
   height: 100%;
 }
 
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 body {
   font-family: var(--font);
   background: var(--bg);
@@ -17,6 +21,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
+  transition: background 0.2s, color 0.2s;
 }
 
 #root {
@@ -52,12 +57,11 @@ button {
   font-size: inherit;
 }
 
-input {
+input, textarea {
   font-family: inherit;
   font-size: inherit;
 }
 
-/* Shared across pages */
 .page-header {
   padding: 14px 20px;
   background: var(--surface);
@@ -68,14 +72,15 @@ input {
 }
 
 .page-title {
+  font-family: var(--font-heading);
   font-size: 18px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.3px;
 }
 
-/* Shared across cards */
 .card-heading {
+  font-family: var(--font-heading);
   font-size: 17px;
   font-weight: 600;
   padding: 20px 20px 12px;

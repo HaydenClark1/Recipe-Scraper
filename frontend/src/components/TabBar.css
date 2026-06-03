@@ -4,6 +4,7 @@
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
 }
 
 .tab-bar__brand {
@@ -21,10 +22,17 @@
   color: var(--text-tertiary);
   transition: color 0.15s;
   cursor: pointer;
+  background: none;
+  border: none;
+  font-family: inherit;
 }
 
 .tab-item--active {
   color: var(--accent);
+}
+
+.tab-item--theme {
+  color: var(--text-secondary);
 }
 
 .tab-icon {
@@ -61,6 +69,7 @@
   }
 
   .tab-bar__brand-name {
+    font-family: var(--font-heading);
     font-size: 20px;
     font-weight: 700;
     color: var(--accent);
@@ -84,6 +93,8 @@
     border-radius: var(--radius-md);
     width: 100%;
     color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
   }
 
   .tab-item--active {
@@ -92,8 +103,13 @@
     font-weight: 600;
   }
 
+  .tab-item--theme {
+    margin-top: auto;
+    color: var(--text-secondary);
+  }
+
   .tab-item:hover:not(.tab-item--active) {
-    background: var(--bg);
+    background: var(--surface-raised);
     color: var(--text-primary);
   }
 

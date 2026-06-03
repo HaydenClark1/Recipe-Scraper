@@ -29,16 +29,18 @@ vi.mock('../../components/RecipeCarousel.jsx', () => ({
 }))
 
 describe('RecipeDetailPage editing', () => {
-  it('opens the ingredients editor from a card edit button', async () => {
+  it('opens the ingredients editor from the NutritionCard edit button', async () => {
     render(<MemoryRouter><RecipeDetailPage /></MemoryRouter>)
     const btns = await screen.findAllByRole('button', { name: /edit ingredients/i })
     fireEvent.click(btns[0])
     expect(screen.getByRole('dialog', { name: /edit ingredients/i })).toBeInTheDocument()
   })
 
-  it('opens the instructions editor from the Instructions card edit button', async () => {
+  it('does not show an edit instructions button on the InstructionsCard', async () => {
     render(<MemoryRouter><RecipeDetailPage /></MemoryRouter>)
-    fireEvent.click(await screen.findByRole('button', { name: /edit instructions/i }))
-    expect(screen.getByRole('dialog', { name: /edit instructions/i })).toBeInTheDocument()
+    // Wait for the page to fully render (nutrition loads async)
+    await screen.findAllByRole('button', { name: /edit ingredients/i })
+    const editInstructionsBtns = screen.queryAllByRole('button', { name: /edit instructions/i })
+    expect(editInstructionsBtns).toHaveLength(0)
   })
 })

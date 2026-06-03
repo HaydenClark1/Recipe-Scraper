@@ -16,7 +16,7 @@
   background: var(--surface, #fff);
   padding: 28px 24px;
   border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--shadow-md, 0 4px 24px rgba(15, 23, 42, 0.08));
 }
 
 .auth-title {
@@ -38,12 +38,12 @@
   font-size: 16px;
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 10px;
-  background: #fff;
+  background: var(--surface, #fff);
   color: var(--text-primary, #0f172a);
 }
 
 .auth-input:focus {
-  outline: 2px solid #6366f1;
+  outline: 2px solid var(--accent, #16a34a);
   outline-offset: 1px;
 }
 

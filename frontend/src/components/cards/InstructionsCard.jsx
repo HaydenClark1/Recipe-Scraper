@@ -4,12 +4,12 @@ import { buildSegments } from '../../lib/highlightInstruction.js'
 import { IngredientPopover } from '../IngredientPopover.jsx'
 import './InstructionsCard.css'
 
-export function InstructionsCard({ recipe, onEdit }) {
+export function InstructionsCard({ recipe }) {
   const parsed = useMemo(
     () => recipe.ingredients.map(parseIngredientLine),
     [recipe.ingredients]
   )
-  const [popover, setPopover] = useState(null) // { anchorEl, text } | null
+  const [popover, setPopover] = useState(null)
 
   const handleClick = useCallback((event, ingredient) => {
     const anchorEl = event.currentTarget
@@ -51,11 +51,6 @@ export function InstructionsCard({ recipe, onEdit }) {
           text={popover.text}
           onClose={() => setPopover(null)}
         />
-      )}
-      {onEdit && (
-        <button className="card-edit-btn" onClick={onEdit} aria-label="Edit instructions">
-          Edit instructions
-        </button>
       )}
     </div>
   )

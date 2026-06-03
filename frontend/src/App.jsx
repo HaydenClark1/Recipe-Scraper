@@ -9,6 +9,7 @@ import { SavedPage } from './pages/SavedPage.jsx'
 import { RecipeDetailPage } from './pages/RecipeDetailPage.jsx'
 import { LoginPage } from './pages/LoginPage.jsx'
 import { SignupPage } from './pages/SignupPage.jsx'
+import { useTheme } from './hooks/useTheme.js'
 import './styles/global.css'
 import './App.css'
 
@@ -38,11 +39,16 @@ const router = createHashRouter([
   { path: '/recipe', element: <RequireAuth><RecipeDetailPage /></RequireAuth> },
 ])
 
+function ThemeRoot() {
+  useTheme()
+  return <RouterProvider router={router} />
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <RecipeProvider>
-        <RouterProvider router={router} />
+        <ThemeRoot />
       </RecipeProvider>
     </AuthProvider>
   )

@@ -55,7 +55,7 @@
 
 .scrape-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+  box-shadow: 0 0 0 3px var(--accent-muted);
 }
 
 .scrape-btn {

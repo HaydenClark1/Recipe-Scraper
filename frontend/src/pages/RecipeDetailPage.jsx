@@ -11,7 +11,6 @@ import { IngredientsCard } from '../components/cards/IngredientsCard.jsx'
 import { InstructionsCard } from '../components/cards/InstructionsCard.jsx'
 import { NutritionCard } from '../components/cards/NutritionCard.jsx'
 import { IngredientsEditor } from '../components/IngredientsEditor.jsx'
-import { InstructionsEditor } from '../components/InstructionsEditor.jsx'
 import './RecipeDetailPage.css'
 
 export function RecipeDetailPage() {
@@ -19,15 +18,11 @@ export function RecipeDetailPage() {
   const navigate = useNavigate()
   const { add, remove, findSaved } = useSavedRecipes()
   const [saveDbState, setSaveDbState] = useState('idle')
-  const [editing, setEditing] = useState(null) // 'ingredients' | 'instructions' | null
+  const [editingIngredients, setEditingIngredients] = useState(false)
 
-  // All hooks must run before any early return (rules of hooks).
   const savedRow = recipe ? findSaved(recipe) : null
-
-  // Seed the working document from the saved row (rich) if present, else the scraped recipe.
   const editor = useRecipeEditor(savedRow || recipe || {})
 
-  // Debounced autosave for already-saved recipes. Skips the initial render.
   const firstRun = useRef(true)
   useEffect(() => {
     if (firstRun.current) { firstRun.current = false; return }
@@ -79,16 +74,13 @@ export function RecipeDetailPage() {
       <RecipeCarousel
         slides={[
           <ImageCard recipe={derivedRecipe} isFav={fav} onToggleFav={handleToggleFav} saveDbState={saveDbState} onSaveToDb={handleSaveToDb} />,
-          <IngredientsCard recipe={derivedRecipe} onEdit={() => setEditing('ingredients')} />,
-          <InstructionsCard recipe={derivedRecipe} onEdit={() => setEditing('instructions')} />,
-          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} onEdit={() => setEditing('ingredients')} />,
+          <IngredientsCard recipe={derivedRecipe} />,
+          <InstructionsCard recipe={derivedRecipe} />,
+          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} onEdit={() => setEditingIngredients(true)} />,
         ]}
       />
-      {editing === 'ingredients' && (
-        <IngredientsEditor editor={editor} items={editor.ingredients} onClose={() => setEditing(null)} />
-      )}
-      {editing === 'instructions' && (
-        <InstructionsEditor editor={editor} items={editor.instructions} onClose={() => setEditing(null)} />
+      {editingIngredients && (
+        <IngredientsEditor editor={editor} items={editor.ingredients} onClose={() => setEditingIngredients(false)} />
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 .ingredients-card {
   background: var(--surface);
   min-height: 100%;
+  transition: background 0.2s;
 }
 
 .ingredients-list {
@@ -12,7 +13,7 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  padding: 11px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border);
   font-size: 15px;
   line-height: 1.5;
@@ -33,20 +34,3 @@
   margin-top: 5px;
   align-self: flex-start;
 }
-
-.card-edit-btn {
-  margin-top: 14px;
-  width: 100%;
-  min-height: 44px;
-  padding: 10px 14px;
-  border: 1px solid #FCA5A5;
-  border-radius: 12px;
-  background: #FFF7F7;
-  color: #DC2626;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-.card-edit-btn:hover { background: #FEE2E2; }
-.card-edit-btn:focus-visible { outline: 2px solid #DC2626; outline-offset: 2px; }
