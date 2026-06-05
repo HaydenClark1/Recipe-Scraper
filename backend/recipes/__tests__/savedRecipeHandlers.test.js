@@ -191,3 +191,114 @@ test('empty query returns all of the user\'s recipes', async () => {
   await makeSearchHandler(searchPrisma(sampleRows))({ userId: 9, query: {} }, res)
   assert.strictEqual(res.body.recipes.length, 2)
 })
+
+// ── Nutrition persistence ──────────────────────────────────────────────────
+
+const stubNutrition = { totals: { calories: 300 }, items: [], estimated: false }
+const makeComputeNutrition = (result = stubNutrition) => async () => result
+
+test('create stores nutrition and nutritionSig when computeNutrition is provided', async () => {
+  let createdData = null
+  const prisma = { savedRecipe: { create: async ({ data }) => { createdData = data; return { id: 1, ...data, createdAt: 't' } } } }
+  const res = mockRes()
+  const computeNutrition = makeComputeNutrition()
+  await makeCreateHandler(prisma, { computeNutrition })({
+    userId: 9, body: { recipe: { title: 'Soup', ingredients: ['a'], instructions: ['x'], servings: '2' } },
+  }, res)
+  assert.strictEqual(res.statusCode, 201)
+  assert.ok(createdData.nutrition, 'nutrition should be stored')
+  assert.ok(createdData.nutritionSig, 'nutritionSig should be stored')
+  assert.deepStrictEqual(JSON.parse(createdData.nutrition).totals, { calories: 300 })
+})
+
+test('create saves with nutrition=null when computeNutrition throws (best-effort)', async () => {
+  let createdData = null
+  const prisma = { savedRecipe: { create: async ({ data }) => { createdData = data; return { id: 1, ...data, createdAt: 't' } } } }
+  const res = mockRes()
+  const computeNutrition = async () => { throw new Error('FatSecret unavailable') }
+  await makeCreateHandler(prisma, { computeNutrition })({
+    userId: 9, body: { recipe: { title: 'Soup', ingredients: ['a'], instructions: ['x'] } },
+  }, res)
+  assert.strictEqual(res.statusCode, 201)
+  assert.strictEqual(createdData.nutrition, null)
+})
+
+test('update skips recompute when signature unchanged', async () => {
+  let computeCalls = 0
+  const computeNutrition = async () => { computeCalls++; return stubNutrition }
+
+  // Compute sig for this recipe first (same way handler will)
+  const { nutritionSignature } = require('../../nutrition/signature')
+  const recipe = { title: 'T', ingredients: ['a'], instructions: ['x'], servings: null }
+  const sig = nutritionSignature({ ingredients: ['a'], overrides: [], servings: null })
+
+  const prisma = {
+    savedRecipe: {
+      findFirst: async () => ({ id: 5, nutritionSig: sig, nutrition: JSON.stringify(stubNutrition) }),
+      update: async (arg) => ({ id: 5, ...arg.data, createdAt: 't' }),
+    },
+  }
+  const res = mockRes()
+  await makeUpdateHandler(prisma, { computeNutrition })({
+    userId: 9, params: { id: '5' }, body: { recipe },
+  }, res)
+  assert.strictEqual(computeCalls, 0, 'should not recompute when sig unchanged')
+})
+
+test('update recomputes nutrition when signature changes', async () => {
+  let computeCalls = 0
+  const computeNutrition = async () => { computeCalls++; return stubNutrition }
+
+  const prisma = {
+    savedRecipe: {
+      findFirst: async () => ({ id: 5, nutritionSig: 'old-sig', nutrition: null }),
+      update: async (arg) => ({ id: 5, ...arg.data, createdAt: 't' }),
+    },
+  }
+  const res = mockRes()
+  await makeUpdateHandler(prisma, { computeNutrition })({
+    userId: 9, params: { id: '5' }, body: { recipe: { title: 'T', ingredients: ['a'], instructions: ['x'] } },
+  }, res)
+  assert.strictEqual(computeCalls, 1, 'should recompute when sig changed')
+})
+
+test('update tolerates throwing computeNutrition and still saves', async () => {
+  const computeNutrition = async () => { throw new Error('offline') }
+  let updateData = null
+  const prisma = {
+    savedRecipe: {
+      findFirst: async () => ({ id: 5, nutritionSig: 'old', nutrition: null }),
+      update: async (arg) => { updateData = arg.data; return { id: 5, ...arg.data, createdAt: 't' } },
+    },
+  }
+  const res = mockRes()
+  await makeUpdateHandler(prisma, { computeNutrition })({
+    userId: 9, params: { id: '5' }, body: { recipe: { title: 'T', ingredients: ['a'], instructions: ['x'] } },
+  }, res)
+  assert.strictEqual(res.statusCode, 200)
+  assert.strictEqual(updateData.nutrition, null)
+})
+
+test('deserializeRecipe returns parsed nutrition object', () => {
+  const r = deserializeRecipe({
+    id: 1, title: 'T', image: null,
+    ingredients: '["a"]', instructions: '["x"]',
+    servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
+    sourceUrl: null, createdAt: 't',
+    nutrition: JSON.stringify(stubNutrition),
+    nutritionSig: 'abc123',
+  })
+  assert.deepStrictEqual(r.nutrition.totals, { calories: 300 })
+  assert.strictEqual(r.nutritionSig, 'abc123')
+})
+
+test('deserializeRecipe returns nutrition=null when not stored', () => {
+  const r = deserializeRecipe({
+    id: 1, title: 'T', image: null,
+    ingredients: '["a"]', instructions: '["x"]',
+    servings: null, prepTime: null, totalTime: null, category: '[]', cuisine: '[]',
+    sourceUrl: null, createdAt: 't',
+    nutrition: null, nutritionSig: null,
+  })
+  assert.strictEqual(r.nutrition, null)
+})

@@ -77,7 +77,7 @@ export function RecipeDetailPage() {
           <ImageCard recipe={derivedRecipe} isFav={fav} onToggleFav={handleToggleFav} saveDbState={saveDbState} onSaveToDb={handleSaveToDb} />,
           <IngredientsCard recipe={derivedRecipe} />,
           <InstructionsCard recipe={derivedRecipe} />,
-          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} onEdit={(items) => { setNutritionItems(items); setEditingIngredients(true) }} />,
+          <NutritionCard recipe={derivedRecipe} overrides={editor.overrides} nutrition={savedRow?.nutrition ?? null} onEdit={(items) => { setNutritionItems(items); setEditingIngredients(true) }} />,
         ]}
       />
       {editingIngredients && (

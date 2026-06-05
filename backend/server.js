@@ -68,8 +68,12 @@ async function initNutrition() {
 }
 
 
+// Thunk so handlers always use the current resolveFood (reassigned after USDA loads).
+const computeNutrition = (ingredients, servings, overrides) =>
+  combineNutrition(ingredients, servings, { searchFood: resolveFood, overrides })
+
 app.use("/auth", createAuthRouter(prisma));
-app.use("/saved-recipes", createSavedRecipeRouter(prisma, makeAuthMiddleware(verifyToken)));
+app.use("/saved-recipes", createSavedRecipeRouter(prisma, makeAuthMiddleware(verifyToken), { computeNutrition }));
 
 // Read Recipies from Excel File and store
 let jsonData = [];

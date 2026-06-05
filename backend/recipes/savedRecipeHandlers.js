@@ -1,5 +1,6 @@
 const crypto = require('crypto')
 const Fuse = require('fuse.js')
+const { nutritionSignature } = require('../nutrition/signature')
 
 function newId() {
   return crypto.randomUUID()
@@ -53,7 +54,43 @@ function deserializeRecipe(row) {
     cuisine: JSON.parse(row.cuisine || '[]'),
     sourceUrl: row.sourceUrl,
     createdAt: row.createdAt,
+    nutrition: row.nutrition ? JSON.parse(row.nutrition) : null,
+    nutritionSig: row.nutritionSig ?? null,
   }
+}
+
+// Derive the overrides array from rich ingredientsData (mirrors deriveOverrides in frontend).
+function deriveOverrides(rich) {
+  const overrides = []
+  ;(rich || []).forEach((item, index) => {
+    const n = item.nutrition
+    if (!n) return
+    if (n.excluded) { overrides.push({ index, type: 'exclude' }); return }
+    if (n.manual) { overrides.push({ index, type: 'manual', ...n.manual }); return }
+    if (n.food) overrides.push({ index, type: 'replace', foodName: n.food.foodName, foodDescription: n.food.foodDescription, fdcId: n.food.fdcId })
+    if (n.amount) overrides.push({ index, type: 'amount', quantity: n.amount.quantity, unit: n.amount.unit })
+  })
+  return overrides
+}
+
+// Compute + attach nutrition fields to a serialized row. Best-effort: on failure
+// sets nutrition=null so the save is never blocked by an external API outage.
+async function attachNutrition(data, recipe, prevSig, computeNutrition) {
+  const rich = JSON.parse(data.ingredientsData || '[]')
+  const ingredientTexts = rich.map((r) => r.text)
+  const overrides = deriveOverrides(rich)
+  const sig = nutritionSignature({ ingredients: ingredientTexts, overrides, servings: recipe.servings ?? null })
+
+  if (sig === prevSig) return  // unchanged — keep whatever is stored
+
+  let nutrition = null
+  try {
+    nutrition = await computeNutrition(ingredientTexts, recipe.servings, overrides)
+  } catch {
+    // best-effort — fall through with null
+  }
+  data.nutrition = nutrition ? JSON.stringify(nutrition) : null
+  data.nutritionSig = sig
 }
 
 function makeListHandler(prisma) {
@@ -63,13 +100,15 @@ function makeListHandler(prisma) {
   }
 }
 
-function makeCreateHandler(prisma) {
+function makeCreateHandler(prisma, { computeNutrition } = {}) {
   return async function create(req, res) {
     const recipe = req.body && req.body.recipe
     if (!recipe || !recipe.title) {
       return res.status(400).json({ error: 'recipe with a title is required' })
     }
-    const row = await prisma.savedRecipe.create({ data: serializeRecipe(recipe, req.userId) })
+    const data = serializeRecipe(recipe, req.userId)
+    if (computeNutrition) await attachNutrition(data, recipe, null, computeNutrition)
+    const row = await prisma.savedRecipe.create({ data })
     return res.status(201).json({ recipe: deserializeRecipe(row) })
   }
 }
@@ -83,7 +122,7 @@ function makeDeleteHandler(prisma) {
   }
 }
 
-function makeUpdateHandler(prisma) {
+function makeUpdateHandler(prisma, { computeNutrition } = {}) {
   return async function update(req, res) {
     const id = Number(req.params.id)
     const recipe = req.body && req.body.recipe
@@ -94,6 +133,7 @@ function makeUpdateHandler(prisma) {
     if (!owned) return res.status(404).json({ error: 'Recipe not found' })
     const data = serializeRecipe(recipe, req.userId)
     delete data.userId
+    if (computeNutrition) await attachNutrition(data, recipe, owned.nutritionSig, computeNutrition)
     const row = await prisma.savedRecipe.update({ where: { id }, data })
     return res.status(200).json({ recipe: deserializeRecipe(row) })
   }
@@ -115,6 +155,6 @@ function makeSearchHandler(prisma) {
 }
 
 module.exports = {
-  serializeRecipe, deserializeRecipe,
+  serializeRecipe, deserializeRecipe, deriveOverrides,
   makeListHandler, makeCreateHandler, makeDeleteHandler, makeUpdateHandler, makeSearchHandler,
 }

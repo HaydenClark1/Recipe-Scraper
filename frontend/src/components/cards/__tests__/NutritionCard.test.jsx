@@ -58,6 +58,28 @@ it('shows empty message when there are no ingredients', () => {
   expect(screen.getByText('No nutrition data found.')).toBeInTheDocument()
 })
 
+describe('NutritionCard stored nutrition prop', () => {
+  it('renders from stored nutrition without calling getNutrition', async () => {
+    getNutrition.mockReset()
+    const stored = {
+      servings: 4,
+      totals: { calories: 800, fat: 10, carbs: 20, protein: 30 },
+      perServing: { calories: 200, fat: 2.5, carbs: 5, protein: 7.5 },
+      items: [{ name: 'eggs', matched: true, matchedName: 'Egg', calories: 200, fat: 10, carbs: 1, protein: 12 }],
+      estimated: false,
+    }
+    render(<NutritionCard recipe={recipe} nutrition={stored} />)
+    await waitFor(() => expect(screen.getByText('200')).toBeInTheDocument())
+    expect(getNutrition).not.toHaveBeenCalled()
+  })
+
+  it('falls back to live fetch when nutrition prop is null', async () => {
+    getNutrition.mockResolvedValue(payload)
+    render(<NutritionCard recipe={recipe} nutrition={null} />)
+    await waitFor(() => expect(getNutrition).toHaveBeenCalled())
+  })
+})
+
 describe('NutritionCard editing', () => {
   beforeEach(() => {
     recipesApi.getNutrition.mockReset()

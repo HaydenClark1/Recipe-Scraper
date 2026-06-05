@@ -61,12 +61,20 @@ function IngredientBreakdown({ items }) {
   )
 }
 
-export function NutritionCard({ recipe, overrides = [], onEdit }) {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
+// When a `nutrition` prop is supplied (stored on a saved recipe), render it
+// directly without fetching. Fall back to a live fetch when absent or null.
+export function NutritionCard({ recipe, overrides = [], onEdit, nutrition: storedNutrition = null }) {
+  const [data, setData] = useState(() => storedNutrition)
+  const [loading, setLoading] = useState(!storedNutrition)
   const [error, setError] = useState(false)
 
   useEffect(() => {
+    // If stored nutrition was provided, use it without fetching.
+    if (storedNutrition) {
+      setData(storedNutrition)
+      setLoading(false)
+      return
+    }
     if (!recipe.ingredients.length) {
       setLoading(false)
       return
@@ -78,7 +86,7 @@ export function NutritionCard({ recipe, overrides = [], onEdit }) {
       .then((d) => { if (alive) { setData(d); setLoading(false) } })
       .catch(() => { if (alive) { setError(true); setLoading(false) } })
     return () => { alive = false }
-  }, [recipe.ingredients, recipe.servings, overrides])
+  }, [storedNutrition, recipe.ingredients, recipe.servings, overrides])
 
   const facts = data && (data.perServing || data.totals)
   const matched = data ? data.items.filter((i) => i.matched).length : 0

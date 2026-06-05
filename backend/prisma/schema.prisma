@@ -44,6 +44,8 @@ model SavedRecipe {
   sourceUrl       String?  @db.VarChar(1000)
   createdAt       DateTime @default(now())
   ingredientsData String?
+  nutrition       String?
+  nutritionSig    String?
 
   @@index([userId])
 }
