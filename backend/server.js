@@ -15,6 +15,7 @@ const { searchFood: fatsecretSearch, searchFoods: fatsecretSearchFoods } = requi
 const { loadFoods, buildIndex, makeUsdaSearch, makeUsdaSearchMany } = require("./nutrition/usdaClient");
 const { makeFoodResolver, makeFoodsResolver } = require("./nutrition/foodResolver");
 const { importUsda } = require("./prisma/importUsda");
+const { aggregateCorrections } = require("./recipes/corrections");
 const { PrismaClient } = require("@prisma/client");
 const { createAuthRouter } = require("./auth/authRoutes");
 const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
@@ -138,6 +139,36 @@ app.post("/scrape-recipe", async (req, res) => {
     if (!recipe) {
       return res.status(404).json({ error: "Recipe not found" });
     }
+
+    // Apply crowd corrections: pre-fill overrides from previous users' fixes.
+    try {
+      const [totalSaves, corrections] = await Promise.all([
+        prisma.savedRecipe.count({ where: { sourceUrl: url } }),
+        prisma.urlCorrection.findMany({ where: { sourceUrl: url } }),
+      ]);
+      if (totalSaves > 0 && corrections.length > 0) {
+        const crowd = aggregateCorrections(corrections, totalSaves);
+        const textFixes = crowd.filter(c => c.type === 'text');
+        const overrides = crowd.filter(c => c.type !== 'text');
+
+        // Apply text fixes directly to ingredient arrays
+        if (textFixes.length && Array.isArray(recipe.ingredients)) {
+          textFixes.forEach(({ index, correctedText }) => {
+            if (recipe.ingredients[index] != null) recipe.ingredients[index] = correctedText;
+            if (Array.isArray(recipe.ingredientsData) && recipe.ingredientsData[index]) {
+              recipe.ingredientsData[index] = { ...recipe.ingredientsData[index], text: correctedText };
+            }
+          });
+        }
+        recipe.crowdOverrides = overrides;
+      } else {
+        recipe.crowdOverrides = [];
+      }
+    } catch (err) {
+      console.warn("Crowd corrections unavailable:", err.message);
+      recipe.crowdOverrides = [];
+    }
+
     return res.status(200).json(recipe);
   } catch (err) {
     console.error("Scraping failed:", err.message);

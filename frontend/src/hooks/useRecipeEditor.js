@@ -9,10 +9,27 @@ function recipeKey(recipe) {
   return recipe ? (recipe.sourceUrl || recipe.title || '') : ''
 }
 
-export function useRecipeEditor(recipe) {
+function applyInitialOverrides(items, overrides) {
+  if (!overrides || !overrides.length) return items
+  return items.map((item, index) => {
+    const ov = overrides.find((o) => o.index === index)
+    if (!ov) return item
+    let nutrition = {}
+    if (ov.type === 'exclude') nutrition = { excluded: true }
+    else if (ov.type === 'manual') nutrition = { manual: { calories: ov.calories ?? 0, fat: ov.fat ?? 0, carbs: ov.carbs ?? 0, protein: ov.protein ?? 0 } }
+    else if (ov.type === 'replace') nutrition = { food: { foodName: ov.foodName, foodDescription: ov.foodDescription, fdcId: ov.fdcId } }
+    else if (ov.type === 'amount') nutrition = { amount: { quantity: ov.quantity, unit: ov.unit } }
+    return { ...item, nutrition }
+  })
+}
+
+export function useRecipeEditor(recipe, { initialOverrides } = {}) {
   const seed = recipe || {}
   const [ingredients, setIngredients] = useState(() =>
-    buildIngredientItems(seed.ingredientsData ?? seed.ingredients))
+    applyInitialOverrides(
+      buildIngredientItems(seed.ingredientsData ?? seed.ingredients),
+      initialOverrides,
+    ))
   const [instructions, setInstructions] = useState(() =>
     buildInstructionItems(seed.instructions))
 

@@ -292,6 +292,59 @@ test('deserializeRecipe returns parsed nutrition object', () => {
   assert.strictEqual(r.nutritionSig, 'abc123')
 })
 
+// ── Correction recording ───────────────────────────────────────────────────
+
+test('create with sourceUrl and overrides upserts UrlCorrection rows', async () => {
+  const upserted = []
+  const prisma = {
+    savedRecipe: { create: async ({ data }) => ({ id: 1, ...data, createdAt: 't' }) },
+    urlCorrection: { upsert: async (arg) => { upserted.push(arg.create); return arg.create } },
+  }
+  const rich = [{ id: 'a', text: '2 eggs', nutrition: { excluded: true } }]
+  await makeCreateHandler(prisma)({
+    userId: 9,
+    body: { recipe: { title: 'Soup', sourceUrl: 'http://example.com/recipe', ingredientsData: rich, instructions: [] } },
+  }, mockRes())
+  assert.strictEqual(upserted.length, 1)
+  assert.strictEqual(upserted[0].correctionType, 'exclude')
+  assert.strictEqual(upserted[0].sourceUrl, 'http://example.com/recipe')
+})
+
+test('create without sourceUrl does not write UrlCorrection rows', async () => {
+  const upserted = []
+  const prisma = {
+    savedRecipe: { create: async ({ data }) => ({ id: 1, ...data, createdAt: 't' }) },
+    urlCorrection: { upsert: async (arg) => { upserted.push(arg); return arg.create } },
+  }
+  await makeCreateHandler(prisma)({
+    userId: 9,
+    body: { recipe: { title: 'Soup', ingredients: ['a'], instructions: [] } },
+  }, mockRes())
+  assert.strictEqual(upserted.length, 0)
+})
+
+test('update records correction against original baseline', async () => {
+  const upserted = []
+  const prisma = {
+    savedRecipe: {
+      findFirst: async () => ({
+        id: 5, nutritionSig: 'old', nutrition: null,
+        sourceUrl: 'http://example.com/recipe',
+        originalIngredients: JSON.stringify(['2 eggs']),
+      }),
+      update: async (arg) => ({ id: 5, ...arg.data, createdAt: 't' }),
+    },
+    urlCorrection: { upsert: async (arg) => { upserted.push(arg.create); return arg.create } },
+  }
+  const rich = [{ id: 'a', text: '2 eggs', nutrition: { food: { foodName: 'Egg', foodDescription: 'Per 1 large - Calories: 72kcal | Fat: 4.75g | Carbs: 0.36g | Protein: 6.28g' } } }]
+  await makeUpdateHandler(prisma)({
+    userId: 9, params: { id: '5' },
+    body: { recipe: { title: 'Soup', ingredientsData: rich, instructions: [] } },
+  }, mockRes())
+  assert.strictEqual(upserted.length, 1)
+  assert.strictEqual(upserted[0].correctionType, 'replace')
+})
+
 test('deserializeRecipe returns nutrition=null when not stored', () => {
   const r = deserializeRecipe({
     id: 1, title: 'T', image: null,

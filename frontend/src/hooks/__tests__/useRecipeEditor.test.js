@@ -55,6 +55,23 @@ describe('useRecipeEditor', () => {
     ])
   })
 
+  it('applies initialOverrides (crowdOverrides) to matching ingredient lines', () => {
+    const { result } = renderHook(() => useRecipeEditor(baseRecipe, { initialOverrides: [{ index: 0, type: 'exclude' }] }))
+    expect(result.current.ingredients[0].nutrition).toEqual({ excluded: true })
+    expect(result.current.ingredients[1].nutrition).toBeNull()
+  })
+
+  it('applies replace crowd override to the correct line', () => {
+    const overrides = [{ index: 1, type: 'replace', foodName: 'Salt', foodDescription: 'Per 1g - Calories: 0kcal | Fat: 0g | Carbs: 0g | Protein: 0g' }]
+    const { result } = renderHook(() => useRecipeEditor(baseRecipe, { initialOverrides: overrides }))
+    expect(result.current.ingredients[1].nutrition.food.foodName).toBe('Salt')
+  })
+
+  it('ignores initialOverrides when undefined', () => {
+    const { result } = renderHook(() => useRecipeEditor(baseRecipe, {}))
+    expect(result.current.ingredients[0].nutrition).toBeNull()
+  })
+
   it('setAmount rewrites the ingredient text line to match the chosen amount', () => {
     const { result } = renderHook(() => useRecipeEditor(baseRecipe))
     const a = result.current.ingredients[0].id

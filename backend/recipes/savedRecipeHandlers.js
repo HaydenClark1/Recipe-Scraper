@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const Fuse = require('fuse.js')
 const { nutritionSignature } = require('../nutrition/signature')
+const { detectCorrections } = require('./corrections')
 
 function newId() {
   return crypto.randomUUID()
@@ -15,9 +16,9 @@ function normalizeIngredientItems(input) {
   )
 }
 
-function serializeRecipe(recipe, userId) {
+function serializeRecipe(recipe, userId, { captureOriginal = false } = {}) {
   const rich = normalizeIngredientItems(recipe.ingredientsData ?? recipe.ingredients)
-  return {
+  const row = {
     userId,
     title: recipe.title || '',
     image: recipe.image ?? null,
@@ -31,6 +32,10 @@ function serializeRecipe(recipe, userId) {
     sourceUrl: recipe.sourceUrl ?? null,
     ingredientsData: JSON.stringify(rich),
   }
+  if (captureOriginal) {
+    row.originalIngredients = JSON.stringify(rich.map((r) => r.text))
+  }
+  return row
 }
 
 function deserializeRecipe(row) {
@@ -56,6 +61,20 @@ function deserializeRecipe(row) {
     createdAt: row.createdAt,
     nutrition: row.nutrition ? JSON.parse(row.nutrition) : null,
     nutritionSig: row.nutritionSig ?? null,
+    originalIngredients: row.originalIngredients ? JSON.parse(row.originalIngredients) : null,
+  }
+}
+
+// Upsert UrlCorrection rows for each changed ingredient line.
+async function recordCorrections(prisma, userId, sourceUrl, originalTexts, richItems) {
+  if (!sourceUrl || !originalTexts) return
+  const corrections = detectCorrections(originalTexts, richItems)
+  for (const c of corrections) {
+    await prisma.urlCorrection.upsert({
+      where: { sourceUrl_ingredientIndex_userId: { sourceUrl, ingredientIndex: c.ingredientIndex, userId } },
+      update: { correctionType: c.correctionType, correctionData: c.correctionData, originalText: c.originalText },
+      create: { sourceUrl, ingredientIndex: c.ingredientIndex, originalText: c.originalText, correctionType: c.correctionType, correctionData: c.correctionData, userId },
+    })
   }
 }
 
@@ -106,9 +125,12 @@ function makeCreateHandler(prisma, { computeNutrition } = {}) {
     if (!recipe || !recipe.title) {
       return res.status(400).json({ error: 'recipe with a title is required' })
     }
-    const data = serializeRecipe(recipe, req.userId)
+    const data = serializeRecipe(recipe, req.userId, { captureOriginal: true })
     if (computeNutrition) await attachNutrition(data, recipe, null, computeNutrition)
     const row = await prisma.savedRecipe.create({ data })
+    const rich = JSON.parse(data.ingredientsData)
+    const originalTexts = JSON.parse(data.originalIngredients)
+    await recordCorrections(prisma, req.userId, recipe.sourceUrl, originalTexts, rich)
     return res.status(201).json({ recipe: deserializeRecipe(row) })
   }
 }
@@ -135,6 +157,10 @@ function makeUpdateHandler(prisma, { computeNutrition } = {}) {
     delete data.userId
     if (computeNutrition) await attachNutrition(data, recipe, owned.nutritionSig, computeNutrition)
     const row = await prisma.savedRecipe.update({ where: { id }, data })
+    // Use the original baseline from when the recipe was first saved
+    const originalTexts = owned.originalIngredients ? JSON.parse(owned.originalIngredients) : null
+    const rich = JSON.parse(data.ingredientsData)
+    await recordCorrections(prisma, req.userId, owned.sourceUrl, originalTexts, rich)
     return res.status(200).json({ recipe: deserializeRecipe(row) })
   }
 }

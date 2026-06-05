@@ -22,7 +22,9 @@ export function RecipeDetailPage() {
   const [nutritionItems, setNutritionItems] = useState([])
 
   const savedRow = recipe ? findSaved(recipe) : null
-  const editor = useRecipeEditor(savedRow || recipe || {})
+  // crowdOverrides only apply to freshly-scraped recipes (not saved rows, which already have user overrides)
+  const initialOverrides = savedRow ? undefined : recipe?.crowdOverrides
+  const editor = useRecipeEditor(savedRow || recipe || {}, { initialOverrides })
 
   const firstRun = useRef(true)
   useEffect(() => {

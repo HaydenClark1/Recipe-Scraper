@@ -43,9 +43,24 @@ model SavedRecipe {
   cuisine         String?  @db.VarChar(500)
   sourceUrl       String?  @db.VarChar(1000)
   createdAt       DateTime @default(now())
-  ingredientsData String?
-  nutrition       String?
-  nutritionSig    String?
+  ingredientsData     String?
+  nutrition           String?
+  nutritionSig        String?
+  originalIngredients String?
 
   @@index([userId])
+}
+
+model UrlCorrection {
+  id              Int      @id @default(autoincrement())
+  sourceUrl       String   @db.VarChar(1000)
+  ingredientIndex Int
+  originalText    String   @db.VarChar(500)
+  correctionType  String   @db.VarChar(20)
+  correctionData  String?
+  userId          Int
+  createdAt       DateTime @default(now())
+
+  @@unique([sourceUrl, ingredientIndex, userId])
+  @@index([sourceUrl])
 }
