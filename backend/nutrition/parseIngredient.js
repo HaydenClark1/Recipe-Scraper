@@ -8,6 +8,7 @@ const UNIT_WORDS = [
   'clove', 'cloves', 'can', 'cans', 'pinch', 'pinches', 'dash', 'dashes',
   'slice', 'slices', 'stick', 'sticks', 'package', 'packages', 'pkg',
   'handful', 'handfuls', 'quart', 'quarts', 'pint', 'pints', 'gallon', 'gallons',
+  'each',
 ]
 const UNITS = new Set(UNIT_WORDS)
 const QTY_RE = /^(\d+\s+\d+\/\d+|\d+\/\d+|\d+(?:\.\d+)?(?:\s*(?:-|–|to)\s*\d+(?:\.\d+)?)?)\s*/

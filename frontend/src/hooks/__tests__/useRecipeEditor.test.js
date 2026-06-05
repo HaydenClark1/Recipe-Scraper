@@ -55,6 +55,15 @@ describe('useRecipeEditor', () => {
     ])
   })
 
+  it('setAmount rewrites the ingredient text line to match the chosen amount', () => {
+    const { result } = renderHook(() => useRecipeEditor(baseRecipe))
+    const a = result.current.ingredients[0].id
+    act(() => result.current.setAmount(a, 0.25, 'cup'))
+    expect(result.current.ingredients[0].text).toBe('0.25 cup eggs')
+    expect(result.current.ingredientTexts[0]).toBe('0.25 cup eggs')
+    expect(result.current.ingredients[0].nutrition.amount).toEqual({ quantity: 0.25, unit: 'cup' })
+  })
+
   it('setManual clears a prior exclude on the same line and vice versa', () => {
     const { result } = renderHook(() => useRecipeEditor(baseRecipe))
     const a = result.current.ingredients[0].id

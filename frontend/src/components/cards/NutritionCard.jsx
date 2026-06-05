@@ -36,9 +36,16 @@ function IngredientBreakdown({ items }) {
           </thead>
           <tbody>
             {items.map((item, i) => (
-              <tr key={i} className={item.matched ? '' : 'nutrition-breakdown__unmatched'}>
+              <tr key={i} className={item.matched ? (item.lowConfidence ? 'nutrition-breakdown__low' : '') : 'nutrition-breakdown__unmatched'}>
                 <td>{item.name}</td>
-                <td>{item.matched ? item.matchedName : '—'}</td>
+                <td>
+                  {item.matched ? item.matchedName : '—'}
+                  {item.lowConfidence && (
+                    <span className="nutrition-breakdown__warn" title="Low-confidence match — verify or replace it">
+                      {' '}⚠ check
+                    </span>
+                  )}
+                </td>
                 <td className="nutrition-breakdown__basis">{item.matched ? item.matchedBasis : '—'}</td>
                 <td>{item.matched ? item.scaleFactor : '—'}</td>
                 <td>{item.calories}</td>
@@ -76,6 +83,7 @@ export function NutritionCard({ recipe, overrides = [], onEdit }) {
   const facts = data && (data.perServing || data.totals)
   const matched = data ? data.items.filter((i) => i.matched).length : 0
   const total = data ? data.items.length : 0
+  const lowConfidence = data ? data.items.filter((i) => i.lowConfidence).length : 0
 
   return (
     <div className="nutrition-card">
@@ -110,6 +118,7 @@ export function NutritionCard({ recipe, overrides = [], onEdit }) {
           )}
           <p className="nutrition-label__note">
             Estimated{total ? ` · ${matched}/${total} ingredients matched` : ''}
+            {lowConfidence ? ` · ${lowConfidence} low-confidence` : ''}
           </p>
           {onEdit && recipe.ingredients.length > 0 && (
             <button className="nutrition-edit-btn" onClick={() => onEdit(data.items)} aria-label="Edit ingredients">

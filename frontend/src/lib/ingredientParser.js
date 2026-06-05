@@ -8,6 +8,7 @@ const UNIT_WORDS = [
   'clove', 'cloves', 'can', 'cans', 'pinch', 'pinches', 'dash', 'dashes',
   'slice', 'slices', 'stick', 'sticks', 'package', 'packages', 'pkg',
   'handful', 'handfuls', 'quart', 'quarts', 'pint', 'pints', 'gallon', 'gallons',
+  'each',
 ]
 
 export const UNITS = new Set(UNIT_WORDS)

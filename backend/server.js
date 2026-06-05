@@ -8,11 +8,13 @@ require("dotenv").config();
 const { Parser } = require("json2csv");
 const {Readable} = require("stream");
 
+const { execSync } = require("child_process");
 const { scrapeRecipe } = require("./scraper");
 const { combineNutrition } = require("./nutrition/combine");
 const { searchFood: fatsecretSearch, searchFoods: fatsecretSearchFoods } = require("./nutrition/fatsecretClient");
 const { loadFoods, buildIndex, makeUsdaSearch, makeUsdaSearchMany } = require("./nutrition/usdaClient");
 const { makeFoodResolver, makeFoodsResolver } = require("./nutrition/foodResolver");
+const { importUsda } = require("./prisma/importUsda");
 const { PrismaClient } = require("@prisma/client");
 const { createAuthRouter } = require("./auth/authRoutes");
 const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
@@ -31,13 +33,35 @@ let resolveFood = makeFoodResolver({ usdaSearch: async () => null, fatsecretSear
 const fatsecretSearchMany = async (q) => { const r = await fatsecretSearch(q); return r ? [r] : []; };
 let resolveFoods = makeFoodsResolver({ usdaSearchMany: async () => [], fatsecretSearchMany });
 
+async function ensureSchema() {
+  try {
+    execSync("npx prisma db push --skip-generate", { stdio: "inherit" });
+  } catch (err) {
+    console.warn("Schema push failed (will try to continue):", err.message);
+  }
+}
+
 async function initNutrition() {
   try {
-    const foods = await loadFoods(prisma);
-    const index = buildIndex(foods);
-    resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index, foods), fatsecretSearch });
-    resolveFoods = makeFoodsResolver({ usdaSearchMany: makeUsdaSearchMany(index, foods), fatsecretSearchMany });
-    console.log(`USDA nutrition index loaded: ${foods.length} foods`);
+    let foods = await loadFoods(prisma);
+
+    // Auto-seed if the Food table is empty and USDA_DATA_DIR is provided.
+    if (foods.length === 0 && process.env.USDA_DATA_DIR) {
+      console.log("Food table empty — importing USDA data from", process.env.USDA_DATA_DIR);
+      await importUsda(process.env.USDA_DATA_DIR, prisma);
+      foods = await loadFoods(prisma);
+    } else if (foods.length === 0) {
+      console.warn("Food table is empty. Set USDA_DATA_DIR and restart to auto-import, or run: USDA_DATA_DIR=<path> npm run db:import");
+    }
+
+    if (foods.length > 0) {
+      const index = buildIndex(foods);
+      resolveFood = makeFoodResolver({ usdaSearch: makeUsdaSearch(index, foods), fatsecretSearch });
+      resolveFoods = makeFoodsResolver({ usdaSearchMany: makeUsdaSearchMany(index, foods), fatsecretSearchMany });
+      console.log(`USDA nutrition index loaded: ${foods.length} foods`);
+    } else {
+      console.warn("USDA index unavailable, using FatSecret-only");
+    }
   } catch (err) {
     console.warn("USDA index unavailable, using FatSecret-only:", err.message);
   }
@@ -52,6 +76,7 @@ let jsonData = [];
 
 
 (async () => {
+  await ensureSchema();
   jsonData = await loadCSVFromGitHub();
   await initNutrition();
   const port = process.env.PORT || 7000;

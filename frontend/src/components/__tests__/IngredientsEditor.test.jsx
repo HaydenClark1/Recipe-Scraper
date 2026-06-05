@@ -81,7 +81,7 @@ describe('IngredientsEditor', () => {
     expect(editor.setManual).toHaveBeenCalledWith('a', { calories: 250, fat: 10, carbs: 5, protein: 30 })
   })
 
-  it('amount flow applies quantity/unit', () => {
+  it('amount flow applies quantity/unit from the dropdown', () => {
     const editor = makeEditor(ingredients)
     render(<IngredientsEditor editor={editor} items={ingredients} onClose={vi.fn()} />)
     fireEvent.click(screen.getAllByRole('button', { name: /^amount$/i })[0])
@@ -89,6 +89,28 @@ describe('IngredientsEditor', () => {
     fireEvent.change(screen.getByLabelText(/^unit$/i), { target: { value: 'cup' } })
     fireEvent.click(screen.getByRole('button', { name: /apply amount/i }))
     expect(editor.setAmount).toHaveBeenCalledWith('a', 0.25, 'cup')
+  })
+
+  it('unit control is a dropdown listing only supported units', () => {
+    render(<IngredientsEditor editor={makeEditor(ingredients)} items={ingredients} onClose={vi.fn()} />)
+    fireEvent.click(screen.getAllByRole('button', { name: /^amount$/i })[0])
+    const select = screen.getByLabelText(/^unit$/i)
+    expect(select.tagName).toBe('SELECT')
+    const optionValues = Array.from(select.querySelectorAll('option')).map((o) => o.value)
+    expect(optionValues).toEqual(expect.arrayContaining(['cup', 'g', 'oz']))
+    expect(optionValues).not.toContain('clove')
+    expect(optionValues).not.toContain('can')
+  })
+
+  it('Apply amount is disabled until quantity and unit are both set', () => {
+    render(<IngredientsEditor editor={makeEditor(ingredients)} items={ingredients} onClose={vi.fn()} />)
+    fireEvent.click(screen.getAllByRole('button', { name: /^amount$/i })[0])
+    const apply = screen.getByRole('button', { name: /apply amount/i })
+    expect(apply).toBeDisabled()
+    fireEvent.change(screen.getByLabelText(/quantity/i), { target: { value: '2' } })
+    expect(apply).toBeDisabled()
+    fireEvent.change(screen.getByLabelText(/^unit$/i), { target: { value: 'g' } })
+    expect(apply).toBeEnabled()
   })
 })
 

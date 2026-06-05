@@ -199,3 +199,51 @@ test('unmatched and excluded items report needsAmount false', async () => {
   const r = await combineNutrition(['1 pinch unobtainium'], null, { searchFood: fake({}) })
   assert.strictEqual(r.items[0].needsAmount, false)
 })
+
+test('"each" amount scales by the matched food\'s per-unit serving', async () => {
+  // FatSecret "Per 1 large egg" → basis { type:'unit', count:1 }. "2 each" → 2× serving.
+  const searchFood = async () => ({
+    food_name: 'Egg, whole, raw',
+    food_description: 'Per 1 large - Calories: 72kcal | Fat: 4.75g | Carbs: 0.36g | Protein: 6.28g',
+  })
+  const overrides = [{ index: 0, type: 'amount', quantity: 2, unit: 'each' }]
+  const r = await combineNutrition(['2 large eggs'], null, { searchFood, overrides })
+  assert.strictEqual(r.items[0].calories, 144)
+  assert.strictEqual(r.items[0].needsAmount, false)
+})
+
+test('"each" amount against a per-mass basis cannot convert and is flagged', async () => {
+  const searchFood = async () => ({
+    food_name: 'Egg',
+    food_description: 'Per 100g - Calories: 143kcal | Fat: 9.5g | Carbs: 0.7g | Protein: 12.6g',
+  })
+  const overrides = [{ index: 0, type: 'amount', quantity: 2, unit: 'each' }]
+  const r = await combineNutrition(['2 eggs'], null, { searchFood, overrides })
+  assert.strictEqual(r.items[0].needsAmount, true)
+})
+
+test('flags lowConfidence when the match shares few words with the ingredient', async () => {
+  // "scallops" auto-matched to "Scalloped potatoes" — no shared words → low confidence.
+  const searchFood = fake({
+    scallops: { food_name: 'Scalloped potatoes', food_description: 'Per 100g - Calories: 90kcal | Fat: 4g | Carbs: 11g | Protein: 2g' },
+  })
+  const r = await combineNutrition(['200 g scallops'], null, { searchFood })
+  assert.strictEqual(r.items[0].matched, true)
+  assert.ok(r.items[0].confidence < 0.85)
+  assert.strictEqual(r.items[0].lowConfidence, true)
+})
+
+test('does not flag lowConfidence for a clean match', async () => {
+  const searchFood = fake({
+    sugar: { food_name: 'Sugar, granulated', food_description: 'Per 100g - Calories: 400kcal | Fat: 0g | Carbs: 100g | Protein: 0g' },
+  })
+  const r = await combineNutrition(['200 g sugar'], null, { searchFood })
+  assert.strictEqual(r.items[0].confidence, 1)
+  assert.strictEqual(r.items[0].lowConfidence, false)
+})
+
+test('does not flag lowConfidence for a user-chosen replace', async () => {
+  const overrides = [{ index: 0, type: 'replace', foodName: 'Totally Different Food', foodDescription: 'Per 100g - Calories: 100kcal | Fat: 1g | Carbs: 1g | Protein: 1g' }]
+  const r = await combineNutrition(['200 g scallops'], null, { searchFood: fake({}), overrides })
+  assert.strictEqual(r.items[0].lowConfidence, false)
+})

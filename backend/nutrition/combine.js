@@ -1,6 +1,28 @@
 const { parseIngredient } = require('./parseIngredient')
 const { toGrams } = require('./units')
 const { parseFoodDescription } = require('./parseFoodDescription')
+const { singularize } = require('./scoreFood')
+
+// "each" amount: a bare count scaled against the matched food's natural serving.
+const COUNT_UNIT = 'each'
+const CONFIDENCE_STOPWORDS = new Set(['and', 'or', 'of', 'the', 'with', 'for', 'to', 'a', 'an'])
+const LOW_CONFIDENCE = 0.85
+
+// Fraction of the ingredient's meaningful words that appear in the matched food's
+// name (word-match recall), normalized for plurals. 1 when there are no words to
+// compare. Used to flag matches that look unrelated to the recipe ingredient.
+function matchConfidence(ingredientName, matchedName) {
+  const words = (s) => String(s || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean)
+  const queryWords = [...new Set(
+    words(cleanForSearch(ingredientName))
+      .filter((w) => w.length >= 3 && !CONFIDENCE_STOPWORDS.has(w))
+      .map(singularize)
+  )]
+  if (!queryWords.length) return 1
+  const matchWords = new Set(words(matchedName).map(singularize))
+  const present = queryWords.filter((w) => matchWords.has(w)).length
+  return present / queryWords.length
+}
 
 // Strip size/prep modifiers and percentages before sending to food search.
 const PREP_STRIP_RE = /\b(extra large|extra virgin|xl|large|medium|small|fresh|freshly|dried|whole|organic|baby|lean|virgin|boneless|skinless|grated|ground|chopped|minced|diced|sliced|crushed|cracked|cold|warm|hot|cooked|raw|unsalted|salted|softened|melted|shredded|bulb|bulbs|leaves|leaf|sprig|sprigs|stalk|stalks|cloves|breast|breasts|thigh|thighs|fillet|fillets)\b/gi
@@ -69,6 +91,8 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
         excluded: false,
         overridden: true,
         needsAmount: false,
+        confidence: null,
+        lowConfidence: false,
         matchedName: 'Manual entry',
         matchedBasis: null,
         scaleFactor: null,
@@ -104,7 +128,11 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
     let scale
     let approx = false
 
-    if (grams != null && desc.basis.type === 'mass') {
+    if (unit === COUNT_UNIT && quantity != null && (desc.basis.type === 'unit' || desc.basis.type === 'serving')) {
+      // "2 each" → count of the matched food's natural serving (e.g. per 1 large egg)
+      const basisCount = desc.basis.type === 'unit' ? (desc.basis.count || 1) : 1
+      scale = quantity / basisCount
+    } else if (grams != null && desc.basis.type === 'mass') {
       // Best case: ingredient weight known, FatSecret gives per-mass data
       scale = grams / desc.basis.grams
     } else if (desc.basis.type === 'unit' && unit && unit === desc.basis.unit && quantity != null) {
@@ -129,12 +157,16 @@ async function combineNutrition(ingredients, servings, { searchFood, overrides =
     }
     if (approx) estimated = true
 
+    const confidence = round(matchConfidence(name, match.food_name || ''), 2)
     const item = {
       name,
       matched: true,
       excluded: false,
       overridden: !!(ov.replace || ov.amount),
       needsAmount: approx && grams == null,
+      confidence,
+      // Only flag auto-matches; a user-chosen replace is a deliberate choice.
+      lowConfidence: !ov.replace && confidence < LOW_CONFIDENCE,
       matchedName: match.food_name || null,
       matchedBasis: match.food_description || null,
       scaleFactor: round(scale, 4),

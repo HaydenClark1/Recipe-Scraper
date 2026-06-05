@@ -33,6 +33,9 @@ RUN npm install
 
 COPY . .
 
+# Generate Prisma client at build time so the binary is ready on startup.
+RUN npx prisma generate
+
 EXPOSE 7000
 
 CMD ["node","server.js"]

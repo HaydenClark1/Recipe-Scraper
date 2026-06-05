@@ -3,6 +3,7 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { SortableContext, verticalListSortingStrategy, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { searchFoods } from '../api/foods.js'
+import { SUPPORTED_UNITS } from '../lib/units.js'
 import './IngredientsEditor.css'
 
 function ReplacePanel({ initial, current, onPick }) {
@@ -46,16 +47,31 @@ function ReplacePanel({ initial, current, onPick }) {
   )
 }
 
+// Native <select> grouped by Mass/Volume — scrolls on its own and is the most
+// reliable dropdown inside the Capacitor webview on phones.
+const UNIT_GROUPS = ['Count', 'Mass', 'Volume']
+
 function AmountPanel({ onApply }) {
   const [qty, setQty] = useState('')
   const [unit, setUnit] = useState('')
+  const canApply = qty.trim() !== '' && unit !== ''
   return (
     <div className="ing-panel ing-panel--row">
       <input className="ing-panel__qty" inputMode="decimal" placeholder="Qty" value={qty}
         onChange={(e) => setQty(e.target.value)} aria-label="Quantity" />
-      <input className="ing-panel__unit" placeholder="Unit (g, cup…)" value={unit}
-        onChange={(e) => setUnit(e.target.value)} aria-label="Unit" />
-      <button className="ing-btn" onClick={() => qty && onApply(Number(qty), unit.trim())} aria-label="Apply amount">Apply amount</button>
+      <select className="ing-panel__unit" value={unit}
+        onChange={(e) => setUnit(e.target.value)} aria-label="Unit">
+        <option value="" disabled>Select unit</option>
+        {UNIT_GROUPS.map((group) => (
+          <optgroup key={group} label={group}>
+            {SUPPORTED_UNITS.filter((u) => u.group === group).map((u) => (
+              <option key={u.value} value={u.value}>{u.label}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <button className="ing-btn" disabled={!canApply}
+        onClick={() => canApply && onApply(Number(qty), unit)} aria-label="Apply amount">Apply amount</button>
     </div>
   )
 }

@@ -22,7 +22,9 @@
 .ing-panel__input { flex: 1; min-height: 44px; font-size: 16px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); }
 .ing-panel__input:focus { border-color: var(--accent); outline: none; }
 .ing-panel__qty { width: 80px; min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); }
-.ing-panel__unit { flex: 1; min-width: 120px; min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); }
+.ing-panel__unit { flex: 1; min-width: 120px; min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-primary); cursor: pointer; }
+.ing-panel__unit:focus { border-color: var(--accent); outline: none; }
+.ing-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .ing-results { list-style: none; margin: 0; padding: 0; max-height: 50vh; overflow-y: auto; overscroll-behavior: contain; }
 .ing-result { display: flex; flex-direction: column; width: 100%; text-align: left; gap: 2px; padding: 12px 8px; border: none; border-bottom: 1px solid var(--border); background: none; cursor: pointer; }
 .ing-result:hover { background: var(--accent-muted); }

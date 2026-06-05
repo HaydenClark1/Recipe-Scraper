@@ -74,7 +74,7 @@ async function importUsda(dataDir, prisma) {
   for (let i = 0; i < rows.length; i += BATCH) {
     await prisma.food.createMany({ data: rows.slice(i, i + BATCH) })
   }
-  console.log(`Imported ${rows.length} foods into MSSQL`)
+  console.log(`Imported ${rows.length} foods into PostgreSQL`)
   return rows.length
 }
 

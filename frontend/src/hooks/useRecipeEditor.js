@@ -3,6 +3,7 @@ import {
   buildIngredientItems, buildInstructionItems,
   deriveIngredientTexts, deriveInstructionTexts, deriveOverrides, moveById, newId,
 } from '../lib/recipeDocument.js'
+import { replaceLeadingAmount } from '../lib/amountText.js'
 
 function recipeKey(recipe) {
   return recipe ? (recipe.sourceUrl || recipe.title || '') : ''
@@ -56,15 +57,18 @@ export function useRecipeEditor(recipe) {
       return next
     })
   }, [patchNutrition])
+  // Setting an amount also rewrites the ingredient's text line to match, so the
+  // displayed line stays consistent with the chosen quantity/unit.
   const setAmount = useCallback((id, quantity, unit) => {
-    patchNutrition(id, (n) => {
-      const next = { ...n }
+    setIngredients((prev) => prev.map((it) => {
+      if (it.id !== id) return it
+      const next = { ...(it.nutrition || {}) }
       delete next.excluded
       delete next.manual
       next.amount = { quantity, unit }
-      return next
-    })
-  }, [patchNutrition])
+      return { ...it, text: replaceLeadingAmount(it.text, quantity, unit), nutrition: next }
+    }))
+  }, [])
   const setManual = useCallback((id, macros) => {
     patchNutrition(id, () => ({
       manual: {

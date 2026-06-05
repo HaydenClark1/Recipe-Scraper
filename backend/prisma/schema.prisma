@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlserver"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -9,9 +9,9 @@ generator client {
 
 model Food {
   fdcId       Int     @id
-  description String  @db.NVarChar(500)
-  dataType    String  @db.NVarChar(50)
-  category    String? @db.NVarChar(100)
+  description String  @db.VarChar(500)
+  dataType    String  @db.VarChar(50)
+  category    String? @db.VarChar(100)
   calories    Float?
   protein     Float?
   fat         Float?
@@ -22,28 +22,28 @@ model Food {
 
 model User {
   id           Int           @id @default(autoincrement())
-  email        String        @unique @db.NVarChar(255)
-  passwordHash String        @db.NVarChar(255)
+  email        String        @unique @db.VarChar(255)
+  passwordHash String        @db.VarChar(255)
   createdAt    DateTime      @default(now())
   savedRecipes SavedRecipe[]
 }
 
 model SavedRecipe {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id])
-  title        String   @db.NVarChar(500)
-  image        String?  @db.NVarChar(1000)
-  ingredients  String   @db.NVarChar(Max)
-  instructions String   @db.NVarChar(Max)
-  servings     String?  @db.NVarChar(50)
-  prepTime     String?  @db.NVarChar(100)
-  totalTime    String?  @db.NVarChar(100)
-  category     String?  @db.NVarChar(500)
-  cuisine      String?  @db.NVarChar(500)
-  sourceUrl       String?  @db.NVarChar(1000)
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  user            User     @relation(fields: [userId], references: [id])
+  title           String   @db.VarChar(500)
+  image           String?  @db.VarChar(1000)
+  ingredients     String
+  instructions    String
+  servings        String?  @db.VarChar(50)
+  prepTime        String?  @db.VarChar(100)
+  totalTime       String?  @db.VarChar(100)
+  category        String?  @db.VarChar(500)
+  cuisine         String?  @db.VarChar(500)
+  sourceUrl       String?  @db.VarChar(1000)
   createdAt       DateTime @default(now())
-  ingredientsData String?  @db.NVarChar(Max)
+  ingredientsData String?
 
   @@index([userId])
 }
