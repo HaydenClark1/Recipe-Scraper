@@ -2,25 +2,23 @@ import { useState } from 'react'
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { searchFoods } from '../api/foods.js'
 import { SUPPORTED_UNITS } from '../lib/units.js'
+import { useFoodSearch } from '../hooks/useFoodSearch.js'
 import './IngredientsEditor.css'
 
 function ReplacePanel({ initial, current, onPick }) {
   const [q, setQ] = useState(initial)
-  const [results, setResults] = useState([])
-  const [state, setState] = useState('idle')
   const [source, setSource] = useState('local')
-  const run = async (src = 'local') => {
+  const [committed, setCommitted] = useState(initial)
+
+  const { data: results = [], isFetching, isError } = useFoodSearch(committed, source)
+
+  const run = (src) => {
     if (q.trim().length < 2) return
     setSource(src)
-    setState('loading')
-    try {
-      const { foods } = await searchFoods(q, src === 'web' ? 'web' : undefined)
-      setResults(foods)
-      setState(foods.length ? 'idle' : 'empty')
-    } catch { setState('error') }
+    setCommitted(q)
   }
+
   return (
     <div className="ing-panel">
       {current && <p className="ing-current">Currently: {current}</p>}
@@ -30,9 +28,11 @@ function ReplacePanel({ initial, current, onPick }) {
         <button className="ing-btn" onClick={() => run('local')} aria-label="Search">Search</button>
       </div>
       <button className="ing-btn ing-btn--web" onClick={() => run('web')} aria-label="Search the web">Search the web</button>
-      {state === 'loading' && <p className="ing-note">Searching{source === 'web' ? ' the web' : ''}…</p>}
-      {state === 'error' && <p className="ing-note">Search unavailable, try again.</p>}
-      {state === 'empty' && <p className="ing-note">No matches — try a simpler term.</p>}
+      {isFetching && <p className="ing-note">Searching{source === 'web' ? ' the web' : ''}…</p>}
+      {isError && <p className="ing-note">Search unavailable, try again.</p>}
+      {!isFetching && !isError && results.length === 0 && committed.trim().length >= 2 && (
+        <p className="ing-note">No matches — try a simpler term.</p>
+      )}
       <ul className="ing-results">
         {results.map((f, i) => (
           <li key={i}>

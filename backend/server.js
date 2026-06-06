@@ -22,11 +22,14 @@ const { createAuthRouter } = require("./auth/authRoutes");
 const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
 const { makeAuthMiddleware } = require("./auth/authMiddleware");
 const { verifyToken } = require("./auth/tokens");
+const { globalLimiter, scrapeLimiter, foodSearchLimiter, nutritionLimiter } = require("./lib/rateLimiter");
 
 const app = express();
 
+app.set('trust proxy', 1); // Render sits behind a proxy
 app.use(cors());
 app.use(express.json());
+app.use(globalLimiter);
 
 const prisma = new PrismaClient();
 
@@ -128,7 +131,7 @@ async function loadCSVFromGitHub() {
  * 
  */
 
-app.post("/scrape-recipe", async (req, res) => {
+app.post("/scrape-recipe", scrapeLimiter, async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
@@ -239,7 +242,7 @@ app.post('/save-recipe', async (req,res) => {
 
 })
 
-app.get('/search-foods', async (req, res) => {
+app.get('/search-foods', foodSearchLimiter, async (req, res) => {
   const q = (req.query.q || '').toString().trim();
   const source = (req.query.source || 'local').toString();
   if (q.length < 2) return res.status(400).json({ error: 'query too short' });
@@ -257,7 +260,7 @@ app.get('/search-foods', async (req, res) => {
   }
 });
 
-app.post('/get-nutrition', async (req, res) => {
+app.post('/get-nutrition', nutritionLimiter, async (req, res) => {
   const { ingredients, servings, overrides } = req.body;
   if (!Array.isArray(ingredients)) {
     return res.status(400).json({ error: "ingredients array is required" });

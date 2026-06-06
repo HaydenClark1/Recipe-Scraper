@@ -1,29 +1,37 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { listSavedRecipes, createSavedRecipe, deleteSavedRecipe } from '../api/savedRecipes.js'
 
+export const SAVED_RECIPES_KEY = ['saved-recipes']
+
 export function useSavedRecipes() {
-  const [list, setList] = useState([])
+  const qc = useQueryClient()
 
-  const refresh = useCallback(async () => {
-    const { recipes } = await listSavedRecipes()
-    setList(recipes)
-  }, [])
+  const { data } = useQuery({
+    queryKey: SAVED_RECIPES_KEY,
+    queryFn: () => listSavedRecipes().then((r) => r.recipes),
+    staleTime: 2 * 60 * 1000,
+  })
+  const list = data ?? []
 
-  useEffect(() => { refresh().catch(() => {}) }, [refresh])
+  const addMutation = useMutation({
+    mutationFn: (recipe) => createSavedRecipe(recipe).then((r) => r.recipe),
+    onSuccess: (saved) => {
+      qc.setQueryData(SAVED_RECIPES_KEY, (prev = []) => [...prev, saved])
+    },
+  })
 
-  const add = useCallback(async (recipe) => {
-    const { recipe: saved } = await createSavedRecipe(recipe)
-    setList((prev) => [...prev, saved])
-    return saved
-  }, [])
+  const removeMutation = useMutation({
+    mutationFn: (id) => deleteSavedRecipe(id),
+    onSuccess: (_, id) => {
+      qc.setQueryData(SAVED_RECIPES_KEY, (prev = []) => prev.filter((r) => r.id !== id))
+    },
+  })
 
-  const remove = useCallback(async (id) => {
-    await deleteSavedRecipe(id)
-    setList((prev) => prev.filter((r) => r.id !== id))
-  }, [])
+  const add = useCallback((recipe) => addMutation.mutateAsync(recipe), [addMutation])
+  const remove = useCallback((id) => removeMutation.mutateAsync(id), [removeMutation])
+  const refresh = useCallback(() => qc.invalidateQueries({ queryKey: SAVED_RECIPES_KEY }), [qc])
 
-  // Saved recipes use DB ids; a freshly scraped recipe has none, so match by
-  // sourceUrl when present, otherwise by title.
   const findSaved = useCallback(
     (recipe) =>
       list.find((r) =>

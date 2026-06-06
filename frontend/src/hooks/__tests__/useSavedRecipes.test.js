@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
+import { createWrapper } from '../../lib/testQueryClient.js'
 
 vi.mock('../../api/savedRecipes.js', () => ({
   listSavedRecipes: vi.fn(),
@@ -19,32 +20,32 @@ beforeEach(() => {
 describe('useSavedRecipes', () => {
   it('loads the list on mount', async () => {
     api.listSavedRecipes.mockResolvedValue({ recipes: [saved] })
-    const { result } = renderHook(() => useSavedRecipes())
+    const { result } = renderHook(() => useSavedRecipes(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.list).toHaveLength(1))
   })
 
   it('add posts and appends the saved recipe', async () => {
     api.createSavedRecipe.mockResolvedValue({ recipe: saved })
-    const { result } = renderHook(() => useSavedRecipes())
+    const { result } = renderHook(() => useSavedRecipes(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.list).toEqual([]))
     await act(async () => { await result.current.add({ title: 'Soup' }) })
     expect(api.createSavedRecipe).toHaveBeenCalledWith({ title: 'Soup' })
-    expect(result.current.list).toHaveLength(1)
+    await waitFor(() => expect(result.current.list).toHaveLength(1))
   })
 
   it('remove deletes by id and drops it from the list', async () => {
     api.listSavedRecipes.mockResolvedValue({ recipes: [saved] })
     api.deleteSavedRecipe.mockResolvedValue(null)
-    const { result } = renderHook(() => useSavedRecipes())
+    const { result } = renderHook(() => useSavedRecipes(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.list).toHaveLength(1))
     await act(async () => { await result.current.remove(1) })
     expect(api.deleteSavedRecipe).toHaveBeenCalledWith(1)
-    expect(result.current.list).toHaveLength(0)
+    await waitFor(() => expect(result.current.list).toHaveLength(0))
   })
 
   it('findSaved matches by title and isSaved reflects it', async () => {
     api.listSavedRecipes.mockResolvedValue({ recipes: [saved] })
-    const { result } = renderHook(() => useSavedRecipes())
+    const { result } = renderHook(() => useSavedRecipes(), { wrapper: createWrapper() })
     await waitFor(() => expect(result.current.list).toHaveLength(1))
     expect(result.current.isSaved({ title: 'Soup' })).toBe(true)
     expect(result.current.isSaved({ title: 'Other' })).toBe(false)

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { getNutrition } from '../../api/recipes.js'
+import { useState } from 'react'
 import { Spinner } from '../ui/Spinner.jsx'
+import { useNutrition } from '../../hooks/useNutrition.js'
 import './NutritionCard.css'
 
 const MACROS = [
@@ -61,45 +61,24 @@ function IngredientBreakdown({ items }) {
   )
 }
 
-// When a `nutrition` prop is supplied (stored on a saved recipe), render it
-// directly without fetching. Fall back to a live fetch when absent or null.
 export function NutritionCard({ recipe, overrides = [], onEdit, nutrition: storedNutrition = null }) {
-  const [data, setData] = useState(() => storedNutrition)
-  const [loading, setLoading] = useState(!storedNutrition)
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    // If stored nutrition was provided, use it without fetching.
-    if (storedNutrition) {
-      setData(storedNutrition)
-      setLoading(false)
-      return
-    }
-    if (!recipe.ingredients.length) {
-      setLoading(false)
-      return
-    }
-    let alive = true
-    setLoading(true)
-    setError(false)
-    getNutrition(recipe.ingredients, recipe.servings, overrides)
-      .then((d) => { if (alive) { setData(d); setLoading(false) } })
-      .catch(() => { if (alive) { setError(true); setLoading(false) } })
-    return () => { alive = false }
-  }, [storedNutrition, recipe.ingredients, recipe.servings, overrides])
+  const { data, isFetching, isError } = useNutrition(recipe, overrides, {
+    initialData: storedNutrition ?? undefined,
+  })
 
   const facts = data && (data.perServing || data.totals)
   const matched = data ? data.items.filter((i) => i.matched).length : 0
   const total = data ? data.items.length : 0
   const lowConfidence = data ? data.items.filter((i) => i.lowConfidence).length : 0
+  const loading = isFetching && !data
 
   return (
     <div className="nutrition-card">
       <h2 className="card-heading">Nutrition</h2>
       {loading && <Spinner message="Loading nutrition info…" />}
-      {!loading && error && <p className="card-empty">Nutrition data unavailable.</p>}
-      {!loading && !error && !facts && <p className="card-empty">No nutrition data found.</p>}
-      {!loading && !error && facts && (
+      {!loading && isError && <p className="card-empty">Nutrition data unavailable.</p>}
+      {!loading && !isError && !facts && <p className="card-empty">No nutrition data found.</p>}
+      {!loading && !isError && facts && (
         <div className="nutrition-label">
           <p className="nutrition-label__basis">
             {data.perServing

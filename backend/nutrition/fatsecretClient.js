@@ -1,5 +1,6 @@
 const OAuth = require('oauth-1.0a')
 const crypto = require('crypto')
+const { withCache, withConcurrencyLimit } = require('./fatsecretCache')
 
 const ENDPOINT = 'https://platform.fatsecret.com/rest/server.api'
 
@@ -43,12 +44,16 @@ async function requestFoods(name) {
   return json
 }
 
+// Wrap outbound calls: max 1 concurrent FatSecret request, cached for 5 min.
+const rateLimitedRequest = withConcurrencyLimit(requestFoods, { maxConcurrent: 1 })
+const cachedRequest = withCache(rateLimitedRequest, { ttlMs: 5 * 60_000 })
+
 async function searchFood(name) {
-  return pickFood(await requestFoods(name))
+  return pickFood(await cachedRequest(name))
 }
 
 async function searchFoods(name) {
-  return pickFoods(await requestFoods(name)).map((f) => ({
+  return pickFoods(await cachedRequest(name)).map((f) => ({
     food_name: f.food_name,
     food_description: f.food_description,
   }))

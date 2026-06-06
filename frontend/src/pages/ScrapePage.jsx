@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { scrapeRecipe } from '../api/recipes.js'
 import { normalizeScraped } from '../lib/normalize.js'
 import { useRecipe } from '../context/RecipeContext.jsx'
@@ -11,40 +12,39 @@ const SLOW_MESSAGE_DELAY = 5000
 
 export function ScrapePage() {
   const [url, setUrl] = useState('')
-  const [loading, setLoading] = useState(false)
   const [slowMessage, setSlowMessage] = useState(false)
-  const [error, setError] = useState(null)
   const { setRecipe } = useRecipe()
   const navigate = useNavigate()
   const timerRef = useRef(null)
 
-  useEffect(() => {
-    return () => clearTimeout(timerRef.current)
-  }, [])
+  useEffect(() => () => clearTimeout(timerRef.current), [])
 
-  const handleSubmit = async (e) => {
+  const { mutate, isPending, isError, error, reset } = useMutation({
+    mutationFn: (u) => scrapeRecipe(u),
+    onMutate: () => {
+      setSlowMessage(false)
+      timerRef.current = setTimeout(() => setSlowMessage(true), SLOW_MESSAGE_DELAY)
+    },
+    onSuccess: (data, u) => {
+      setRecipe(normalizeScraped(data, u))
+      navigate('/recipe')
+    },
+    onSettled: () => {
+      clearTimeout(timerRef.current)
+      setSlowMessage(false)
+    },
+  })
+
+  const handleSubmit = (e) => {
     e.preventDefault()
     if (!url.trim()) return
-    setError(null)
-    setLoading(true)
-    setSlowMessage(false)
-    timerRef.current = setTimeout(() => setSlowMessage(true), SLOW_MESSAGE_DELAY)
-    try {
-      const data = await scrapeRecipe(url.trim())
-      setRecipe(normalizeScraped(data, url.trim()))
-      navigate('/recipe')
-    } catch (err) {
-      if (err.status === 404) {
-        setError("Couldn't find a recipe on that page.")
-      } else {
-        setError(err.message || 'Failed to scrape recipe.')
-      }
-    } finally {
-      clearTimeout(timerRef.current)
-      setLoading(false)
-      setSlowMessage(false)
-    }
+    reset()
+    mutate(url.trim())
   }
+
+  const errorMsg = isError
+    ? (error?.status === 404 ? "Couldn't find a recipe on that page." : error?.message || 'Failed to scrape recipe.')
+    : null
 
   return (
     <div className="scrape-page">
@@ -63,22 +63,22 @@ export function ScrapePage() {
             placeholder="Paste a recipe URL…"
             value={url}
             onChange={e => setUrl(e.target.value)}
-            disabled={loading}
+            disabled={isPending}
             autoComplete="url"
           />
           <button
             className="scrape-btn"
             type="submit"
-            disabled={loading || !url.trim()}
+            disabled={isPending || !url.trim()}
           >
-            {loading ? 'Scraping…' : 'Scrape'}
+            {isPending ? 'Scraping…' : 'Scrape'}
           </button>
         </form>
-        {loading && (
+        {isPending && (
           <Spinner message={slowMessage ? 'Waking up the server…' : 'Scraping recipe…'} />
         )}
-        {error && !loading && (
-          <ErrorMessage message={error} onRetry={() => setError(null)} />
+        {errorMsg && !isPending && (
+          <ErrorMessage message={errorMsg} onRetry={reset} />
         )}
       </main>
     </div>

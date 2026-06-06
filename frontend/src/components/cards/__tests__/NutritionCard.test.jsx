@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { NutritionCard } from '../NutritionCard.jsx'
+import { createWrapper } from '../../../lib/testQueryClient.js'
 import * as recipesApi from '../../../api/recipes.js'
 
 vi.mock('../../../api/recipes.js', () => ({ getNutrition: vi.fn() }))
@@ -19,15 +20,18 @@ const payload = {
   estimated: true,
 }
 
+// Each test gets a fresh QueryClient to avoid cache bleed-through
+const renderCard = (ui) => render(ui, { wrapper: createWrapper() })
+
 it('shows spinner while loading', () => {
   getNutrition.mockReturnValue(new Promise(() => {}))
-  render(<NutritionCard recipe={recipe} />)
+  renderCard(<NutritionCard recipe={recipe} />)
   expect(screen.getByRole('status')).toBeInTheDocument()
 })
 
 it('renders the per-serving calories and macros on success', async () => {
   getNutrition.mockResolvedValue(payload)
-  render(<NutritionCard recipe={recipe} />)
+  renderCard(<NutritionCard recipe={recipe} />)
   await waitFor(() => expect(screen.getByText('460')).toBeInTheDocument())
   expect(screen.getByText('Total Fat')).toBeInTheDocument()
   expect(screen.getByText('23.1g')).toBeInTheDocument()
@@ -35,26 +39,26 @@ it('renders the per-serving calories and macros on success', async () => {
 
 it('shows how many ingredients were matched', async () => {
   getNutrition.mockResolvedValue(payload)
-  render(<NutritionCard recipe={recipe} />)
+  renderCard(<NutritionCard recipe={recipe} />)
   await waitFor(() => expect(screen.getByText(/1\/2 ingredients matched/)).toBeInTheDocument())
 })
 
 it('passes servings to getNutrition', async () => {
   getNutrition.mockResolvedValue(payload)
-  render(<NutritionCard recipe={recipe} />)
+  renderCard(<NutritionCard recipe={recipe} />)
   await waitFor(() =>
     expect(getNutrition).toHaveBeenCalledWith(['2 cups flour', '3 eggs'], '4', []))
 })
 
 it('shows unavailable message on error', async () => {
   getNutrition.mockRejectedValue(new Error('Network error'))
-  render(<NutritionCard recipe={recipe} />)
+  renderCard(<NutritionCard recipe={recipe} />)
   await waitFor(() =>
     expect(screen.getByText('Nutrition data unavailable.')).toBeInTheDocument())
 })
 
 it('shows empty message when there are no ingredients', () => {
-  render(<NutritionCard recipe={{ ingredients: [], servings: null }} />)
+  renderCard(<NutritionCard recipe={{ ingredients: [], servings: null }} />)
   expect(screen.getByText('No nutrition data found.')).toBeInTheDocument()
 })
 
@@ -68,14 +72,14 @@ describe('NutritionCard stored nutrition prop', () => {
       items: [{ name: 'eggs', matched: true, matchedName: 'Egg', calories: 200, fat: 10, carbs: 1, protein: 12 }],
       estimated: false,
     }
-    render(<NutritionCard recipe={recipe} nutrition={stored} />)
+    renderCard(<NutritionCard recipe={recipe} nutrition={stored} />)
     await waitFor(() => expect(screen.getByText('200')).toBeInTheDocument())
     expect(getNutrition).not.toHaveBeenCalled()
   })
 
   it('falls back to live fetch when nutrition prop is null', async () => {
     getNutrition.mockResolvedValue(payload)
-    render(<NutritionCard recipe={recipe} nutrition={null} />)
+    renderCard(<NutritionCard recipe={recipe} nutrition={null} />)
     await waitFor(() => expect(getNutrition).toHaveBeenCalled())
   })
 })
@@ -93,14 +97,14 @@ describe('NutritionCard editing', () => {
 
   it('passes overrides into getNutrition', async () => {
     const recipe = { ingredients: ['2 chicken breasts'], servings: '2' }
-    render(<NutritionCard recipe={recipe} overrides={[{ index: 0, type: 'exclude' }]} actions={{}} />)
+    renderCard(<NutritionCard recipe={recipe} overrides={[{ index: 0, type: 'exclude' }]} actions={{}} />)
     await waitFor(() => expect(recipesApi.getNutrition).toHaveBeenCalledWith(recipe.ingredients, recipe.servings, [{ index: 0, type: 'exclude' }]))
   })
 
   it('calls onEdit when Edit ingredients button is clicked', async () => {
     const recipe = { ingredients: ['2 chicken breasts'], servings: '2' }
     const onEdit = vi.fn()
-    render(<NutritionCard recipe={recipe} overrides={[]} onEdit={onEdit} />)
+    renderCard(<NutritionCard recipe={recipe} overrides={[]} onEdit={onEdit} />)
     await waitFor(() => screen.getByRole('button', { name: /edit ingredients/i }))
     fireEvent.click(screen.getByRole('button', { name: /edit ingredients/i }))
     expect(onEdit).toHaveBeenCalledOnce()
