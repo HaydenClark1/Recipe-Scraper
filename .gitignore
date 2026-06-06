@@ -49,3 +49,4 @@ yarn-error.*
 .clinerules
 
 future-plans.txt.worktrees/
+.worktrees/
