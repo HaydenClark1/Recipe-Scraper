@@ -1,4 +1,5 @@
 const axios = require('axios')
+const { assertSafeUrl, isPrivateIp } = require('../lib/urlGuard')
 
 const BROWSER_HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -34,11 +35,27 @@ async function fetchHtmlWithPuppeteer(url) {
   }
 }
 
+// Synchronous redirect guard: block redirects to internal IP literals or
+// localhost (the common redirect-to-metadata SSRF trick). Hostname redirects
+// still resolve through DNS at request time; the initial-URL check is the
+// primary protection.
+function guardRedirect(options) {
+  const host = options.hostname || options.host || ''
+  const bare = host.replace(/^\[|\]$/g, '')
+  if (bare === 'localhost' || (require('net').isIP(bare) && isPrivateIp(bare))) {
+    throw new Error('blocked internal redirect target')
+  }
+}
+
 async function fetchHtml(url) {
+  // SSRF guard: validate scheme + resolved IP before any request.
+  await assertSafeUrl(url)
   try {
     const { data } = await axios.get(url, {
       headers: BROWSER_HEADERS,
       timeout: 15000,
+      maxRedirects: 5,
+      beforeRedirect: (options) => guardRedirect(options),
     })
     return data
   } catch (err) {
