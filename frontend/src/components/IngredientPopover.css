@@ -1,8 +1,7 @@
 .ingredient-popover {
   position: fixed;
-  transform: translate(-50%, -100%);
   z-index: 1000;
-  max-width: 220px;
+  max-width: min(260px, calc(100vw - 16px));
   padding: 8px 12px;
   background: var(--text-primary);
   color: var(--surface);
@@ -16,10 +15,13 @@
 
 .ingredient-popover__arrow {
   position: absolute;
-  bottom: -5px;
-  left: 50%;
   width: 10px;
   height: 10px;
   background: var(--text-primary);
   transform: translateX(-50%) rotate(45deg);
 }
+
+/* Popover sits above the anchor → arrow points down from its bottom edge */
+.ingredient-popover[data-placement="top"] .ingredient-popover__arrow { bottom: -5px; }
+/* Popover sits below the anchor → arrow points up from its top edge */
+.ingredient-popover[data-placement="bottom"] .ingredient-popover__arrow { top: -5px; }

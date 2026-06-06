@@ -1,10 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { SUPPORTED_UNITS } from '../lib/units.js'
 import { useFoodSearch } from '../hooks/useFoodSearch.js'
 import './IngredientsEditor.css'
+
+// Centered modal popup, rendered to <body> so it overlays the editor.
+function Modal({ title, onClose, children }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return createPortal(
+    <div className="ing-modal__backdrop" onClick={onClose}>
+      <div className="ing-modal" role="dialog" aria-modal="true" aria-label={title}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="ing-modal__header">
+          <span>{title}</span>
+          <button className="ing-modal__close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="ing-modal__body">{children}</div>
+      </div>
+    </div>,
+    document.body
+  )
+}
+
+const PANEL_TITLES = { replace: 'Replace food', amount: 'Set amount', manual: 'Manual nutrition' }
 
 function ReplacePanel({ initial, current, onPick }) {
   const [q, setQ] = useState(initial)
@@ -151,9 +177,13 @@ function Row({ item, editor, autoItem }) {
         <button className="ing-btn" aria-label="Exclude" onClick={() => editor.exclude(item.id)}>Exclude</button>
         <button className="ing-btn" aria-label="Reset nutrition" onClick={() => editor.clearNutrition(item.id)}>Reset</button>
       </div>
-      {panel === 'replace' && <ReplacePanel initial={item.text} current={autoItem && autoItem.matched ? autoItem.matchedName : null} onPick={(f) => { editor.setFood(item.id, f); setPanel(null) }} />}
-      {panel === 'amount' && <AmountPanel onApply={(q, u) => { editor.setAmount(item.id, q, u); setPanel(null) }} />}
-      {panel === 'manual' && <ManualPanel onApply={(m) => { editor.setManual(item.id, m); setPanel(null) }} />}
+      {panel && (
+        <Modal title={PANEL_TITLES[panel]} onClose={() => setPanel(null)}>
+          {panel === 'replace' && <ReplacePanel initial={item.text} current={autoItem && autoItem.matched ? autoItem.matchedName : null} onPick={(f) => { editor.setFood(item.id, f); setPanel(null) }} />}
+          {panel === 'amount' && <AmountPanel onApply={(q, u) => { editor.setAmount(item.id, q, u); setPanel(null) }} />}
+          {panel === 'manual' && <ManualPanel onApply={(m) => { editor.setManual(item.id, m); setPanel(null) }} />}
+        </Modal>
+      )}
     </li>
   )
 }
