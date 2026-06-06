@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const Fuse = require('fuse.js')
 const { nutritionSignature } = require('../nutrition/signature')
 const { detectCorrections } = require('./corrections')
+const { hashUrl } = require('../lib/hashUrl')
 
 function newId() {
   return crypto.randomUUID()
@@ -30,6 +31,7 @@ function serializeRecipe(recipe, userId, { captureOriginal = false } = {}) {
     category: JSON.stringify(recipe.category || []),
     cuisine: JSON.stringify(recipe.cuisine || []),
     sourceUrl: recipe.sourceUrl ?? null,
+    urlHash: recipe.sourceUrl ? hashUrl(recipe.sourceUrl) : null,
     ingredientsData: JSON.stringify(rich),
   }
   if (captureOriginal) {
@@ -65,20 +67,19 @@ function deserializeRecipe(row) {
   }
 }
 
-// Upsert UrlCorrection rows for each changed ingredient line.
 async function recordCorrections(prisma, userId, sourceUrl, originalTexts, richItems) {
   if (!sourceUrl || !originalTexts) return
+  const urlH = hashUrl(sourceUrl)
   const corrections = detectCorrections(originalTexts, richItems)
   for (const c of corrections) {
     await prisma.urlCorrection.upsert({
-      where: { sourceUrl_ingredientIndex_userId: { sourceUrl, ingredientIndex: c.ingredientIndex, userId } },
+      where: { urlHash_ingredientIndex_userId: { urlHash: urlH, ingredientIndex: c.ingredientIndex, userId } },
       update: { correctionType: c.correctionType, correctionData: c.correctionData, originalText: c.originalText },
-      create: { sourceUrl, ingredientIndex: c.ingredientIndex, originalText: c.originalText, correctionType: c.correctionType, correctionData: c.correctionData, userId },
+      create: { sourceUrl, urlHash: urlH, ingredientIndex: c.ingredientIndex, originalText: c.originalText, correctionType: c.correctionType, correctionData: c.correctionData, userId },
     })
   }
 }
 
-// Derive the overrides array from rich ingredientsData (mirrors deriveOverrides in frontend).
 function deriveOverrides(rich) {
   const overrides = []
   ;(rich || []).forEach((item, index) => {
@@ -92,15 +93,13 @@ function deriveOverrides(rich) {
   return overrides
 }
 
-// Compute + attach nutrition fields to a serialized row. Best-effort: on failure
-// sets nutrition=null so the save is never blocked by an external API outage.
 async function attachNutrition(data, recipe, prevSig, computeNutrition) {
   const rich = JSON.parse(data.ingredientsData || '[]')
   const ingredientTexts = rich.map((r) => r.text)
   const overrides = deriveOverrides(rich)
   const sig = nutritionSignature({ ingredients: ingredientTexts, overrides, servings: recipe.servings ?? null })
 
-  if (sig === prevSig) return  // unchanged — keep whatever is stored
+  if (sig === prevSig) return
 
   let nutrition = null
   try {
@@ -157,7 +156,6 @@ function makeUpdateHandler(prisma, { computeNutrition } = {}) {
     delete data.userId
     if (computeNutrition) await attachNutrition(data, recipe, owned.nutritionSig, computeNutrition)
     const row = await prisma.savedRecipe.update({ where: { id }, data })
-    // Use the original baseline from when the recipe was first saved
     const originalTexts = owned.originalIngredients ? JSON.parse(owned.originalIngredients) : null
     const rich = JSON.parse(data.ingredientsData)
     await recordCorrections(prisma, req.userId, owned.sourceUrl, originalTexts, rich)

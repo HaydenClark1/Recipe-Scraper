@@ -16,6 +16,7 @@ const { loadFoods, buildIndex, makeUsdaSearch, makeUsdaSearchMany } = require(".
 const { makeFoodResolver, makeFoodsResolver } = require("./nutrition/foodResolver");
 const { importUsda } = require("./prisma/importUsda");
 const { aggregateCorrections } = require("./recipes/corrections");
+const { hashUrl } = require("./lib/hashUrl");
 const { PrismaClient } = require("@prisma/client");
 const { createAuthRouter } = require("./auth/authRoutes");
 const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
@@ -142,9 +143,10 @@ app.post("/scrape-recipe", async (req, res) => {
 
     // Apply crowd corrections: pre-fill overrides from previous users' fixes.
     try {
+      const h = hashUrl(url);
       const [totalSaves, corrections] = await Promise.all([
-        prisma.savedRecipe.count({ where: { sourceUrl: url } }),
-        prisma.urlCorrection.findMany({ where: { sourceUrl: url } }),
+        prisma.savedRecipe.count({ where: { urlHash: h } }),
+        prisma.urlCorrection.findMany({ where: { urlHash: h } }),
       ]);
       if (totalSaves > 0 && corrections.length > 0) {
         const crowd = aggregateCorrections(corrections, totalSaves);

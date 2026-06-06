@@ -29,31 +29,34 @@ model User {
 }
 
 model SavedRecipe {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  user            User     @relation(fields: [userId], references: [id])
-  title           String   @db.VarChar(500)
-  image           String?  @db.VarChar(1000)
-  ingredients     String
-  instructions    String
-  servings        String?  @db.VarChar(50)
-  prepTime        String?  @db.VarChar(100)
-  totalTime       String?  @db.VarChar(100)
-  category        String?  @db.VarChar(500)
-  cuisine         String?  @db.VarChar(500)
-  sourceUrl       String?  @db.VarChar(1000)
-  createdAt       DateTime @default(now())
+  id                  Int      @id @default(autoincrement())
+  userId              Int
+  user                User     @relation(fields: [userId], references: [id])
+  title               String   @db.VarChar(500)
+  image               String?  @db.VarChar(1000)
+  ingredients         String
+  instructions        String
+  servings            String?  @db.VarChar(50)
+  prepTime            String?  @db.VarChar(100)
+  totalTime           String?  @db.VarChar(100)
+  category            String?  @db.VarChar(500)
+  cuisine             String?  @db.VarChar(500)
+  sourceUrl           String?  @db.VarChar(1000)
+  urlHash             String?  @db.VarChar(64)
+  createdAt           DateTime @default(now())
   ingredientsData     String?
   nutrition           String?
   nutritionSig        String?
   originalIngredients String?
 
   @@index([userId])
+  @@index([urlHash])
 }
 
 model UrlCorrection {
   id              Int      @id @default(autoincrement())
   sourceUrl       String   @db.VarChar(1000)
+  urlHash         String   @db.VarChar(64)
   ingredientIndex Int
   originalText    String   @db.VarChar(500)
   correctionType  String   @db.VarChar(20)
@@ -61,6 +64,6 @@ model UrlCorrection {
   userId          Int
   createdAt       DateTime @default(now())
 
-  @@unique([sourceUrl, ingredientIndex, userId])
-  @@index([sourceUrl])
+  @@unique([urlHash, ingredientIndex, userId])
+  @@index([urlHash])
 }
