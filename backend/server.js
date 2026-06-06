@@ -23,12 +23,18 @@ const { createSavedRecipeRouter } = require("./recipes/savedRecipeRoutes");
 const { makeAuthMiddleware } = require("./auth/authMiddleware");
 const { verifyToken } = require("./auth/tokens");
 const { globalLimiter, scrapeLimiter, foodSearchLimiter, nutritionLimiter } = require("./lib/rateLimiter");
+const { makeCorsOptions } = require("./lib/corsOptions");
+const { checkProductionSecrets } = require("./lib/envGuard");
+const { validateUrl, validateIngredients, validateQuery } = require("./lib/validate");
+
+// Fail fast on insecure production config (weak/missing JWT_SECRET).
+checkProductionSecrets();
 
 const app = express();
 
 app.set('trust proxy', 1); // Render sits behind a proxy
-app.use(cors());
-app.use(express.json());
+app.use(cors(makeCorsOptions()));
+app.use(express.json({ limit: '256kb' }));
 app.use(globalLimiter);
 
 const prisma = new PrismaClient();
@@ -132,10 +138,11 @@ async function loadCSVFromGitHub() {
  */
 
 app.post("/scrape-recipe", scrapeLimiter, async (req, res) => {
-  const { url } = req.body;
-
-  if (!url) {
-    return res.status(400).json({ error: "URL is required" });
+  let url;
+  try {
+    url = validateUrl(req.body && req.body.url);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 
   try {
@@ -176,6 +183,10 @@ app.post("/scrape-recipe", scrapeLimiter, async (req, res) => {
 
     return res.status(200).json(recipe);
   } catch (err) {
+    if (err.code === 'UNSAFE_URL') {
+      console.warn("Blocked unsafe scrape URL:", err.message);
+      return res.status(400).json({ error: "That URL can't be scraped." });
+    }
     console.error("Scraping failed:", err.message);
     return res.status(500).json({ error: "Failed to scrape recipe" });
   }
@@ -243,9 +254,13 @@ app.post('/save-recipe', async (req,res) => {
 })
 
 app.get('/search-foods', foodSearchLimiter, async (req, res) => {
-  const q = (req.query.q || '').toString().trim();
+  let q;
+  try {
+    q = validateQuery(req.query.q);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
   const source = (req.query.source || 'local').toString();
-  if (q.length < 2) return res.status(400).json({ error: 'query too short' });
   try {
     let foods;
     if (source === 'web') {
@@ -262,8 +277,10 @@ app.get('/search-foods', foodSearchLimiter, async (req, res) => {
 
 app.post('/get-nutrition', nutritionLimiter, async (req, res) => {
   const { ingredients, servings, overrides } = req.body;
-  if (!Array.isArray(ingredients)) {
-    return res.status(400).json({ error: "ingredients array is required" });
+  try {
+    validateIngredients(ingredients);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
   if (overrides !== undefined && !Array.isArray(overrides)) {
     return res.status(400).json({ error: "overrides must be an array" });

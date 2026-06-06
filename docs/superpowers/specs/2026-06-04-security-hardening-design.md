@@ -53,3 +53,30 @@ we scope the review.
 ## Sequencing
 Independent of #1 and #11, but the rate-limiting fixes are shared with plan #1 —
 land them once and reference from both.
+
+## Implemented (2026-06-06, branch feat/security-hardening)
+
+1. **SSRF guard** — `lib/urlGuard.js` (`assertSafeUrl`, `isPrivateIp`): requires
+   http(s); blocks loopback/RFC-1918/link-local (incl. 169.254.169.254 metadata)/
+   CGNAT/ULA/IPv4-mapped targets via DNS resolution; rejects DNS-rebinding. Wired
+   into `scraper/fetch.js` (pre-request + a synchronous redirect guard).
+   `/scrape-recipe` returns 400 on a blocked URL.
+2. **CORS allowlist** — `lib/corsOptions.js`; `ALLOWED_ORIGINS` env (comma-sep).
+   No-Origin requests (native app/curl) pass; empty allowlist = allow-all (dev).
+3. **Rate limiting** — landed in plan #1 (`lib/rateLimiter.js`), in place here.
+4. **JWT_SECRET production guard** — `lib/envGuard.js` (`checkProductionSecrets`):
+   refuses to start when `NODE_ENV=production` and the secret is missing/default/
+   <32 chars. Called at server startup.
+5. **Secrets hygiene** — confirmed `backend/.env` is gitignored. (Rotation of the
+   Neon/FatSecret credentials shared in plaintext remains a manual user action.)
+6. **Input validation** — `lib/validate.js`: URL (type/length), ingredients
+   (array, <=200 lines, <=1000 chars each), query (2-200 chars); `express.json`
+   capped at 256 kb. Wired into `/scrape-recipe`, `/get-nutrition`, `/search-foods`.
+7. **Dependency audit** — removed unused `xlsx` (high-severity, no fix available);
+   `npm audit` now reports 0 vulnerabilities.
+8. **Error hygiene** — endpoints return generic messages; internals logged
+   server-side only.
+
+**Deferred:** redirect-following SSRF re-resolution inside Puppeteer; rotating the
+exposed credentials (manual); the unused `react-native-*` deps in the backend
+package.json (non-security, left in place).
