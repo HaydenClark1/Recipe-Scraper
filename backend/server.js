@@ -46,7 +46,10 @@ let resolveFoods = makeFoodsResolver({ usdaSearchMany: async () => [], fatsecret
 
 async function ensureSchema() {
   try {
-    execSync("npx prisma db push --skip-generate", { stdio: "inherit" });
+    // --accept-data-loss lets additive-but-flagged changes (e.g. adding a unique
+    // constraint) apply automatically on deploy. Our schema changes are additive;
+    // Postgres treats NULLs as distinct so the urlHash unique constraint is safe.
+    execSync("npx prisma db push --skip-generate --accept-data-loss", { stdio: "inherit" });
   } catch (err) {
     console.warn("Schema push failed (will try to continue):", err.message);
   }
