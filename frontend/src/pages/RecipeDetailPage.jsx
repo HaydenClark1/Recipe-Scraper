@@ -22,6 +22,8 @@ export function RecipeDetailPage() {
   const [nutritionItems, setNutritionItems] = useState([])
 
   const savedRow = recipe ? findSaved(recipe) : null
+  const [optimisticFav, setOptimisticFav] = useState(null) // null = defer to savedRow
+
   // crowdOverrides only apply to freshly-scraped recipes (not saved rows, which already have user overrides)
   const initialOverrides = savedRow ? undefined : recipe?.crowdOverrides
   const editor = useRecipeEditor(savedRow || recipe || {}, { initialOverrides })
@@ -41,15 +43,19 @@ export function RecipeDetailPage() {
     return <Navigate to="/scrape" replace />
   }
 
-  const fav = !!savedRow
+  const fav = optimisticFav !== null ? optimisticFav : !!savedRow
   const derivedRecipe = { ...recipe, ingredients: editor.ingredientTexts, instructions: editor.instructionTexts }
 
   const handleToggleFav = () => {
-    if (savedRow) {
-      remove(savedRow.id)
-    } else {
-      add(editor.toPayload())
-    }
+    const next = !fav
+    setOptimisticFav(next)
+    const action = savedRow ? remove(savedRow.id) : add(editor.toPayload())
+    action.catch(() => {
+      setOptimisticFav(!next) // revert on failure
+      alert('Could not save recipe. Please try again.')
+    }).finally(() => {
+      setOptimisticFav(null) // hand back control to savedRow
+    })
   }
 
   const handleSaveToDb = async () => {

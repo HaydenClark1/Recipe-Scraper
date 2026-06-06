@@ -1,9 +1,9 @@
 1) Redux, caching, and rate limiting for API calls
-2) Make edit ingredients prettier and not cover full screen, should show what was matched to and what unit used
 3) https://barefootcontessa.com/recipes/creamy-chicken-thighs-with-lemon-and-thyme, Need to be able to 
    scrape websites where everything isn't formatted right
 5) Look for security risks and fix
 6) Make bottom tabs clickable
-9) Need to get DB up in AWS or something cheap
 10) Save URLs in DB so we can do quicker scraping, would be valid if scaped less than 1 day ago. Also save when
 users make nutritional changes so we don't have to make changes every time URL is scrapped. Would be valid if >50% people made change per item
+11) Nutrion is also saved with saved recipies, only recalculated on change
+12) Need better formatting for phones, nutritional values off screen, edit is too big, have popup for each ingredient for editing

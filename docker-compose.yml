@@ -1,6 +1,17 @@
 version: '3.9'
 
 services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: recipe
+      POSTGRES_PASSWORD: recipe
+      POSTGRES_DB: recipe_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   frontend:
     build:
       context: ./frontend
@@ -22,3 +33,8 @@ services:
     volumes:
       - ./backend:/app
     command: node server.js
+    depends_on:
+      - db
+
+volumes:
+  pgdata:

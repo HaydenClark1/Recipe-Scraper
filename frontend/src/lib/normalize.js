@@ -18,7 +18,7 @@ function splitInstructions(text) {
   return byNewline
 }
 
-export function normalizeScraped(data) {
+export function normalizeScraped(data, sourceUrl = null) {
   const clean = (val) => (val === 'N/A' || val == null) ? null : val
   return {
     id: generateId(data.title || '', data.image),
@@ -35,6 +35,8 @@ export function normalizeScraped(data) {
     cuisine: Array.isArray(data.cuisine)
       ? data.cuisine
       : (data.cuisine ? [data.cuisine] : []),
+    sourceUrl: sourceUrl || data.sourceUrl || null,
+    crowdOverrides: Array.isArray(data.crowdOverrides) ? data.crowdOverrides : [],
     source: 'scrape',
   }
 }

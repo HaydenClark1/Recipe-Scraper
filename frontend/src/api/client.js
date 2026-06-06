@@ -1,6 +1,6 @@
 import { Preferences } from '@capacitor/preferences'
 
-const BASE_URL = import.meta.env?.VITE_API_URL ?? 'https://recipe-scraper-hk6l.onrender.com'
+const BASE_URL = import.meta.env.VITE_API_URL
 const TOKEN_KEY = 'auth-token'
 
 export async function getToken() {

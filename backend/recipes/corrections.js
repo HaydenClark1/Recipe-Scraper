@@ -60,21 +60,20 @@ function aggregateCorrections(rows, totalSaves, threshold = THRESHOLD) {
 
   const results = []
   for (const [index, group] of byIndex) {
-    if (group.length / totalSaves < threshold) continue
-
-    // Count occurrences of each (type, data) pair
+    // Count occurrences of each specific (type, data) pair
     const counts = new Map()
     for (const row of group) {
       const key = `${row.correctionType}||${row.correctionData ?? ''}`
       counts.set(key, (counts.get(key) ?? 0) + 1)
     }
 
-    // Pick the most common
+    // The specific value itself must reach the threshold — a 50/50 split never fires
     let bestKey = null
     let bestCount = 0
     for (const [key, count] of counts) {
       if (count > bestCount) { bestCount = count; bestKey = key }
     }
+    if (bestCount / totalSaves < threshold) continue
 
     const [type, dataStr] = bestKey.split('||')
     const data = dataStr ? JSON.parse(dataStr) : null

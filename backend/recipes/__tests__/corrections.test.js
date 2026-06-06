@@ -85,8 +85,8 @@ test('returns empty when no rows', () => {
   assert.deepStrictEqual(aggregateCorrections([], 5), [])
 })
 
-test('returns empty when below 60% threshold', () => {
-  // 2 corrections out of 5 saves = 40%
+test('returns empty when specific value is below 60% threshold', () => {
+  // 2 out of 5 saves chose the same value = 40% — below threshold
   const rows = makeRows([
     { ingredientIndex: 0, correctionType: 'exclude', correctionData: null, userId: 1 },
     { ingredientIndex: 0, correctionType: 'exclude', correctionData: null, userId: 2 },
@@ -94,8 +94,17 @@ test('returns empty when below 60% threshold', () => {
   assert.deepStrictEqual(aggregateCorrections(rows, 5), [])
 })
 
-test('returns correction when at exactly 60%', () => {
-  // 3 out of 5 = 60%
+test('returns empty when A and B pick different amounts (50/50 split never fires)', () => {
+  // 2 saves, A=100g, B=500g → each value is 1/2 = 50% < 60% → User C gets original
+  const rows = makeRows([
+    { ingredientIndex: 0, correctionType: 'amount', correctionData: JSON.stringify({ quantity: 100, unit: 'g' }), userId: 1 },
+    { ingredientIndex: 0, correctionType: 'amount', correctionData: JSON.stringify({ quantity: 500, unit: 'g' }), userId: 2 },
+  ])
+  assert.deepStrictEqual(aggregateCorrections(rows, 2), [])
+})
+
+test('returns correction when the specific value reaches exactly 60%', () => {
+  // 3 out of 5 saves all chose the same value = 60%
   const rows = makeRows([
     { ingredientIndex: 0, correctionType: 'exclude', correctionData: null, userId: 1 },
     { ingredientIndex: 0, correctionType: 'exclude', correctionData: null, userId: 2 },

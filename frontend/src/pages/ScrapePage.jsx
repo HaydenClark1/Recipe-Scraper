@@ -31,7 +31,7 @@ export function ScrapePage() {
     timerRef.current = setTimeout(() => setSlowMessage(true), SLOW_MESSAGE_DELAY)
     try {
       const data = await scrapeRecipe(url.trim())
-      setRecipe(normalizeScraped(data))
+      setRecipe(normalizeScraped(data, url.trim()))
       navigate('/recipe')
     } catch (err) {
       if (err.status === 404) {
